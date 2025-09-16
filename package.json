@@ -1,0 +1,54 @@
+{
+  "name": "@masthead-data/dataform-reservation-plugin",
+  "version": "0.0.1",
+  "description": "Reservation assignment plugin for Dataform to optimize BigQuery resource usage by automatically assigning compute reservations",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "prepublishOnly": "npm test && npm run lint",
+    "version": "npm run test && npm run lint && git add -A",
+    "publish:package": "node scripts/publish.js"
+  },
+  "keywords": [
+    "dataform",
+    "bigquery",
+    "reservation",
+    "cost-optimization",
+    "gcp",
+    "google-cloud",
+    "sql",
+    "data-pipeline"
+  ],
+  "author": "Masthead Data",
+  "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/masthead-data/mh-dataform-plugin.git"
+  },
+  "bugs": {
+    "url": "https://github.com/masthead-data/mh-dataform-plugin/issues"
+  },
+  "homepage": "https://github.com/masthead-data/mh-dataform-plugin#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "eslint": "^8.0.0"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "examples.js",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  }
+}
