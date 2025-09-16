@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Publish script for the Dataform Reservation Plugin
+ * Publish script for the Dataform Plugin
  * This script helps with the publishing process to npm
  */
 
@@ -48,7 +48,7 @@ function checkPrerequisites() {
 }
 
 function main() {
-  console.log('🚀 Starting publish process for Dataform Reservation Plugin')
+  console.log('🚀 Starting publish process for Dataform Plugin')
 
   checkPrerequisites()
 

@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Initial release of the Dataform Reservation Plugin
+- Initial release of the Dataform Plugin
 - Automatic BigQuery reservation assignment based on action names
 - Support for high-priority, low-priority, and on-demand reservations
 - Comprehensive test suite with Jest

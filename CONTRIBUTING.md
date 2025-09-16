@@ -1,14 +1,14 @@
 # Contributing to Dataform Reservation Plugin
 
-We welcome contributions to the Dataform Reservation Plugin! This document provides guidelines for contributing to the project.
+We welcome contributions to the Dataform Plugin! This document provides guidelines for contributing to the project.
 
 ## Development Setup
 
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/masthead-data/mh-dataform-plugin.git
-   cd mh-dataform-plugin
+   git clone https://github.com/masthead-data/dataform-plugin.git
+   cd dataform-plugin
    ```
 
 2. **Install dependencies:**
@@ -32,7 +32,7 @@ We welcome contributions to the Dataform Reservation Plugin! This document provi
 ## Project Structure
 
 ```filetree
-mh-dataform-plugin/
+dataform-plugin/
 ├── index.js              # Main plugin code
 ├── test/
 │   └── index.test.js     # Test suite

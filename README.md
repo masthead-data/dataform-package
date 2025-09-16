@@ -1,8 +1,8 @@
-# Reservation Assignment Plugin for Dataform
+# Masthead Plugin for Dataform
 
 ## Overview
 
-Reservation assignment plugin is designed to optimize BigQuery resource usage by automatically assigning compute reservations to Dataform actions based on predefined configuration. This system enables businesses to efficiently manage their BigQuery costs and resource allocation with minimal manual intervention.
+This plugin is designed to optimize BigQuery resource usage by automatically assigning compute reservations to Dataform actions based on predefined configuration. This system enables businesses to efficiently manage their BigQuery costs and resource allocation with minimal manual intervention.
 
 ## Key Benefits
 
@@ -88,7 +88,7 @@ Add the dependency to your `package.json`:
 ```json
 {
   "dependencies": {
-    "mh-dataform-plugin": "0.0.1"
+    "@masthead-data/dataform-plugin": "0.0.1"
   }
 }
 ```
@@ -96,7 +96,7 @@ Add the dependency to your `package.json`:
 and create a setter function in your included JavaScript file:
 
 ```javascript
-const reservations = require("mh-dataform-plugin");
+const reservations = require("dataform-plugin");
 
 const RESERVATION_CONFIG = [
   ...

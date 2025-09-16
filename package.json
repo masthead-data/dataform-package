@@ -1,7 +1,7 @@
 {
-  "name": "@masthead-data/dataform-reservation-plugin",
+  "name": "@masthead-data/dataform-plugin",
   "version": "0.0.1",
-  "description": "Reservation assignment plugin for Dataform to optimize BigQuery resource usage by automatically assigning compute reservations",
+  "description": "Masthead Data plugin for Dataform to optimize BigQuery resource usage",
   "main": "index.js",
   "scripts": {
     "test": "jest",
@@ -27,12 +27,12 @@
   "license": "AGPL-3.0-only",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/masthead-data/mh-dataform-plugin.git"
+    "url": "git+https://github.com/masthead-data/dataform-plugin.git"
   },
   "bugs": {
-    "url": "https://github.com/masthead-data/mh-dataform-plugin/issues"
+    "url": "https://github.com/masthead-data/dataform-plugin/issues"
   },
-  "homepage": "https://github.com/masthead-data/mh-dataform-plugin#readme",
+  "homepage": "https://github.com/masthead-data/dataform-plugin#readme",
   "engines": {
     "node": ">=14.0.0"
   },
