@@ -15,8 +15,7 @@ Reservation assignment plugin is designed to optimize BigQuery resource usage by
 
 ### `publish` actions
 
-{% tabs %}
-{% tab title="SQLX" %}
+* SQLX templates:
 
 ```sql
 config {
@@ -31,8 +30,7 @@ pre_operations {
 SELECT * FROM source_table
 ```
 
-{% endtab %}
-{% tab title="JS" %}
+* JavaScript templates:
 
 ```javascript
 publish('my_table', {
@@ -45,13 +43,9 @@ SELECT * FROM source_table
 `);
 ```
 
-{% endtab %}
-{% endtabs %}
+### `operate` actions
 
-### `operate` and `assert`
-
-{% tabs %}
-{% tab title="SQLX" %}
+* SQLX templates:
 
 ```sql
 config {
@@ -67,8 +61,7 @@ WHEN MATCHED THEN UPDATE SET value = S.value
 WHEN NOT MATCHED THEN INSERT (id, value) VALUES (S.id, S.value);
 ```
 
-{% endtab %}
-{% tab title="JS" %}
+* JavaScript templates:
 
 ```javascript
 operate('my_merge_operation', {
@@ -84,22 +77,36 @@ WHEN NOT MATCHED THEN INSERT (id, value) VALUES (S.id, S.value);
 `);
 ```
 
-{% endtab %}
-{% endtabs %}
-
 Example implementation can be found in [https://github.com/HTTPArchive/dataform](https://github.com/HTTPArchive/dataform).
 
 ## How It Works
 
-### 0\. Installation
+### 0\. Initial Setup
 
-Add the dependency to your `workflow_settings.yaml`:
+Add the dependency to your `package.json`:
 
 ```json
 {
   "dependencies": {
     "mh-dataform-plugin": "0.0.1"
   }
+}
+```
+
+and create a setter function in your included JavaScript file:
+
+```javascript
+const reservations = require("mh-dataform-plugin");
+
+const RESERVATION_CONFIG = [
+  ...
+];
+
+function reservation_setter = reservations.createReservationSetter(RESERVATION_CONFIG);
+
+module.exports = {
+  ...
+  reservation_setter
 }
 ```
 
@@ -149,18 +156,7 @@ The system automatically detects the current Dataform action using two methods:
 
 ### 3\. Reservation Lookup
 
-Actions are matched against the `RESERVATION_CONFIG` using exact string matching:
-
-```javascript
-function getReservation(actionName) {
-  for (const { reservation, set } of RESERVATION_SETS) {
-    if (set.has(actionName)) {
-      return reservation;
-    }
-  }
-  return default_reservation;
-}
-```
+Actions are matched against the `RESERVATION_CONFIG` using exact string matching. The first matching reservation is applied. If no match is found, the default reservation (first entry with `null` reservation) is used. If no default is defined, no reservation override is applied.
 
 ### 4\. SQL Generation
 
