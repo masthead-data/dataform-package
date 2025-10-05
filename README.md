@@ -1,5 +1,7 @@
 # Masthead Plugin for Dataform
 
+[![npm version](https://badge.fury.io/js/%40masthead-data%2Fdataform-plugin.svg)](https://badge.fury.io/js/%40masthead-data%2Fdataform-plugin)
+
 ## Overview
 
 This plugin is designed to optimize BigQuery resource usage by automatically assigning compute reservations to Dataform actions based on predefined configuration. This system enables businesses to efficiently manage their BigQuery costs and resource allocation with minimal manual intervention.
