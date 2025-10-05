@@ -1,4 +1,4 @@
-# Masthead Plugin for Dataform
+# Masthead Package for Dataform
 
 [![npm version](https://badge.fury.io/js/%40masthead-data%2Fdataform-package.svg)](https://badge.fury.io/js/%40masthead-data%2Fdataform-package)
 
