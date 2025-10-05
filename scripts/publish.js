@@ -48,7 +48,7 @@ function checkPrerequisites() {
 }
 
 function main() {
-  console.log('🚀 Starting publish process for Dataform Plugin')
+  console.log('🚀 Starting publish process for a Dataform package')
 
   checkPrerequisites()
 
