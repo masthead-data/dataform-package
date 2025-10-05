@@ -7,8 +7,8 @@ We welcome contributions to the Dataform Plugin! This document provides guidelin
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/masthead-data/dataform-plugin.git
-   cd dataform-plugin
+   git clone https://github.com/masthead-data/dataform-package.git
+   cd dataform-package
    ```
 
 2. **Install dependencies:**
@@ -32,8 +32,8 @@ We welcome contributions to the Dataform Plugin! This document provides guidelin
 ## Project Structure
 
 ```filetree
-dataform-plugin/
-├── index.js              # Main plugin code
+dataform-package/
+├── index.js              # Main package code
 ├── test/
 │   └── index.test.js     # Test suite
 ├── package.json          # Package configuration
@@ -133,4 +133,4 @@ If you have questions about contributing, please:
 2. Open a new issue for discussion
 3. Contact the maintainers
 
-Thank you for contributing to the Dataform Reservation Plugin!
+Thank you for contributing to the Dataform Plugin!

@@ -1,9 +1,9 @@
 /**
  * Example usage of the Dataform Plugin
- * This file demonstrates various ways to use the plugin in your Dataform project
+ * This file demonstrates various ways to use the package in your Dataform project
  */
 
-const { createReservationSetter } = require('@masthead-data/dataform-plugin')
+const { createReservationSetter } = require('@masthead-data/dataform-package')
 
 // Example 1: Define your reservation configuration
 const MY_RESERVATION_CONFIG = [
@@ -60,7 +60,7 @@ SELECT * FROM source_table
 // Example 4: Usage in JavaScript Dataform files
 
 /*
-const { createReservationSetter } = require('@masthead-data/dataform-plugin')
+const { createReservationSetter } = require('@masthead-data/dataform-package')
 
 const MY_CONFIG = [
   // your configuration here

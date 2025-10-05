@@ -82,7 +82,7 @@ function preprocessConfig(config) {
  * @param {Array} config - Array of reservation configuration objects
  * @returns {Function} A reservation setter function that takes a Dataform context
  * @example
- * const { createReservationSetter } = require('@masthead-data/dataform-plugin')
+ * const { createReservationSetter } = require('@masthead-data/dataform-package')
  *
  * const config = [
  *   {

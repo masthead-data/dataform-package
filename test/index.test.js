@@ -3,7 +3,7 @@ const {
   getActionName
 } = require('../index')
 
-// Example configuration for testing (previously hardcoded in the plugin)
+// Example configuration for testing (previously hardcoded in the package)
 const EXAMPLE_RESERVATION_CONFIG = [
   {
     tag: 'high_slots',

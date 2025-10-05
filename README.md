@@ -1,10 +1,10 @@
 # Masthead Plugin for Dataform
 
-[![npm version](https://badge.fury.io/js/%40masthead-data%2Fdataform-plugin.svg)](https://badge.fury.io/js/%40masthead-data%2Fdataform-plugin)
+[![npm version](https://badge.fury.io/js/%40masthead-data%2Fdataform-package.svg)](https://badge.fury.io/js/%40masthead-data%2Fdataform-package)
 
 ## Overview
 
-This plugin is designed to optimize BigQuery resource usage by automatically assigning compute reservations to Dataform actions based on predefined configuration. This system enables businesses to efficiently manage their BigQuery costs and resource allocation with minimal manual intervention.
+This package is designed to optimize BigQuery resource usage by automatically assigning compute reservations to Dataform actions based on predefined configuration. This system enables businesses to efficiently manage their BigQuery costs and resource allocation with minimal manual intervention.
 
 ## Key Benefits
 
@@ -22,17 +22,17 @@ Add the dependency to your `package.json`:
 ```json
 {
   "dependencies": {
-    "@masthead-data/dataform-plugin": "0.0.2"
+    "@masthead-data/dataform-package": "0.0.1"
   }
 }
 ```
 
 and click **Install Packages** in Dataform UI.
 
-Then, import the plugin and create a setter function in your global scope under `/includes` directory:
+Then, import the package and create a setter function in your global scope under `/includes` directory:
 
 ```javascript
-const reservations = require("@masthead-data/dataform-plugin");
+const reservations = require("@masthead-data/dataform-package");
 
 const RESERVATION_CONFIG = [
   ...
@@ -153,12 +153,12 @@ Example implementation can be found in [https://github.com/HTTPArchive/dataform]
 
 ## Under the Hood
 
-### Action Name Detection
+### Supported Actions
 
-The plugin detects the action using two methods:
+The package supports various Dataform contexts for action name detection:
 
-* **Primary**: `ctx.self()` function (for most Dataform contexts)
-* **Fallback**: `ctx.operation.proto.target` (for operation contexts)
+* **Standard Context**: Uses `ctx.self()` to get the action name.
+* **Operation Context**: Falls back to `ctx.operation.proto.target` if `ctx.self()` is not available.
 
 ### Reservation Lookup
 
