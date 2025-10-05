@@ -1,6 +1,6 @@
-# Contributing to Dataform Reservation Plugin
+# Contributing to Dataform package
 
-We welcome contributions to the Dataform Plugin! This document provides guidelines for contributing to the project.
+We welcome contributions to the Dataform package! This document provides guidelines for contributing to the project.
 
 ## Development Setup
 
@@ -133,4 +133,4 @@ If you have questions about contributing, please:
 2. Open a new issue for discussion
 3. Contact the maintainers
 
-Thank you for contributing to the Dataform Plugin!
+Thank you for contributing to the Dataform package!

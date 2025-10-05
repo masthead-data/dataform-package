@@ -1,5 +1,5 @@
 /**
- * Example usage of the Dataform Plugin
+ * Example usage of the Dataform package
  * This file demonstrates various ways to use the package in your Dataform project
  */
 

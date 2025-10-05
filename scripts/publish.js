@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Publish script for the Dataform Plugin
+ * Publish script for the Dataform package
  * This script helps with the publishing process to npm
  */
 

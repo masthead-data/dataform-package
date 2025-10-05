@@ -31,7 +31,7 @@ const EXAMPLE_RESERVATION_CONFIG = [
   }
 ]
 
-describe('Dataform Plugin', () => {
+describe('Dataform package', () => {
   // Create a reservation setter using the example config for testing
   const reservation_setter = createReservationSetter(EXAMPLE_RESERVATION_CONFIG)
 
