@@ -1,6 +1,6 @@
 {
   "name": "@masthead-data/dataform-plugin",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Masthead Data plugin for Dataform to optimize BigQuery resource usage",
   "main": "index.js",
   "scripts": {
