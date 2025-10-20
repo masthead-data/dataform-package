@@ -5,7 +5,7 @@ publish('monthly_aggregation', {
   tags: ['batch_processing']
 }).preOps(ctx => `
   ${constant.setReservation(ctx)}
-`).query(ctx => `
+`).query(`
   SELECT
     FORMAT_DATE('%Y-%m', current_date) as month,
     'aggregated_metrics' as metric_category,

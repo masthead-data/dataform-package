@@ -5,7 +5,7 @@ publish('large_data_processing', {
   tags: ['batch_processing']
 }).preOps(ctx => `
   ${constant.setReservation(ctx)}
-`).query(ctx => `
+`).query(`
   SELECT
     DATE(ts) as processing_date,
     COUNT(*) as record_count,
