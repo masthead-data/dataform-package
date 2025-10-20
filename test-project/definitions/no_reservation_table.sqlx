@@ -1,0 +1,15 @@
+config {
+  type: "table",
+  schema: "test",
+  description: "Table without reservation assignment (uses default)",
+  tags: ["default"]
+}
+
+pre_operations {
+  ${constant.setReservation(ctx)}
+}
+
+SELECT
+  'no_specific_reservation' as reservation_type,
+  CURRENT_TIMESTAMP() as created_at,
+  'This table should use default reservation or none' as note

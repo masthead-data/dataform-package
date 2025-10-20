@@ -1,0 +1,15 @@
+config {
+  type: "table",
+  schema: "test",
+  description: "Critical dashboard table using production reservation",
+  tags: ["production_critical"]
+}
+
+pre_operations {
+  ${constant.setReservation(ctx)}
+}
+
+SELECT
+  DATE(CURRENT_TIMESTAMP()) as report_date,
+  'critical_data' as metric_name,
+  100 as metric_value

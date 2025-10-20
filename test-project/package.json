@@ -1,0 +1,8 @@
+{
+  "name": "test-dataform-project",
+  "description": "Test Dataform project for dataform-package",
+  "dependencies": {
+    "@dataform/core": "3.0.30",
+    "@masthead-data/dataform-package": "file:../"
+  }
+}

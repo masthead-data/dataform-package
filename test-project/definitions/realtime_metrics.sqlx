@@ -1,0 +1,17 @@
+config {
+  type: "incremental",
+  schema: "test",
+  description: "Realtime metrics using production reservation",
+  tags: ["production_critical"]
+}
+
+pre_operations {
+  ${constant.setReservation(ctx)}
+}
+
+SELECT
+  CURRENT_TIMESTAMP() as event_timestamp,
+  'realtime_metric' as metric_type,
+  RAND() * 1000 as metric_value
+
+${ when(incremental(), `WHERE event_timestamp > (SELECT MAX(event_timestamp) FROM ${self()})`) }
