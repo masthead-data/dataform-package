@@ -6,12 +6,8 @@
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "prepublishOnly": "npm test && npm run lint",
-    "version": "npm run test && npm run lint && git add -A",
-    "publish:package": "node scripts/publish.js"
+    "lint:fix": "eslint . --fix"
   },
   "keywords": [
     "dataform",
