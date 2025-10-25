@@ -39,7 +39,7 @@ You can examine the compiled SQL to verify that reservation SET statements are b
 ## Project Structure
 
 - `dataform.json` - Dataform project configuration
-- `includes/config.js` - Reservation configuration and setup
+- `includes/constant.js` - Reservation configuration and setup
 - `definitions/` - SQL and JS table/view definitions
   - `critical_dashboard.sqlx` - Uses production reservation
   - `realtime_metrics.sqlx` - Uses production reservation (incremental)
