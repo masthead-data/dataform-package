@@ -19,6 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## [0.1.0] - 2025-10-27
+
+### Changed
+
+- Updated `getActionName` to use `database.schema.name` format for operation actions.
+
 ## [0.0.1] - 2025-10-06
 
 ### Added
