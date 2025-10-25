@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `getActionName` to use `database.schema.name` format for operation actions.
+- **Breaking Change**: Updated `getActionName` to use `database.schema.name` format for operation actions. Action names in your reservation configuration must now include the schema. For example, change `'my-project.my_table'` to `'my-project.my_schema.my_table'` to match Dataform's actual behavior.
 
 ## [0.0.1] - 2025-10-06
 
