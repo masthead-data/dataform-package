@@ -15,7 +15,7 @@ function getActionName(ctx) {
   // Fallback: construct from proto target
   if (ctx?.operation?.proto?.target) {
     const target = ctx.operation.proto.target
-    return target ? `${target.database}.${target.name}` : null
+    return target ? `${target.database}.${target.schema}.${target.name}` : null
   }
 
   return null
