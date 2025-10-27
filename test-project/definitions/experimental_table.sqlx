@@ -1,0 +1,15 @@
+config {
+  type: "view",
+  schema: "test",
+  description: "Experimental table using development (on-demand) pricing",
+  tags: ["development"]
+}
+
+pre_operations {
+  ${constant.setReservation(ctx)}
+}
+
+SELECT
+  'experimental' as table_type,
+  CURRENT_DATE() as created_date,
+  'This is a test view for development' as description

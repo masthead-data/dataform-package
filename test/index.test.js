@@ -69,7 +69,8 @@ describe('Dataform package', () => {
           proto: {
             target: {
               database: 'httparchive',
-              name: 'crawl.requests'
+              schema: 'crawl',
+              name: 'requests'
             }
           }
         }
@@ -160,6 +161,7 @@ describe('Dataform package', () => {
           proto: {
             target: {
               database: 'test_db',
+              schema: 'test_schema',
               name: 'test_table'
             }
           }
@@ -167,7 +169,7 @@ describe('Dataform package', () => {
       }
 
       const result = getActionName(ctx)
-      expect(result).toBe('test_db.test_table')
+      expect(result).toBe('test_db.test_schema.test_table')
     })
 
     test('should return null for invalid context', () => {
