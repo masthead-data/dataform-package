@@ -50,3 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - API documentation
 - Best practices guide
 - Troubleshooting section
+
+[Unreleased]: https://github.com/masthead-data/dbt-reservations/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/masthead-data/dbt-reservations/compare/v0.0.1...v0.1.0
+[0.0.1]: https://github.com/masthead-data/dbt-reservations/tree/v0.0.1
