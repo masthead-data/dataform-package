@@ -1,9 +1,11 @@
 {
   "name": "@masthead-data/dataform-package",
   "version": "0.1.0",
+  "version": "0.1.0",
   "description": "Masthead Data package for Dataform to optimize BigQuery resource usage",
   "main": "index.js",
   "scripts": {
+    "test": "jest && cd test-project && npm ci && npx @dataform/cli compile --json",
     "test": "jest && cd test-project && npm ci && npx @dataform/cli compile --json",
     "test:watch": "jest --watch",
     "lint": "eslint -c .github/linters/eslint.config.mjs .",
@@ -35,9 +37,9 @@
   },
   "devDependencies": {
     "jest": "30.2.0",
-    "eslint": "9.38.0",
-    "@eslint/js": "9.38.0",
-    "globals": "16.4.0"
+    "eslint": "9.39.0",
+    "@eslint/js": "9.39.0",
+    "globals": "16.5.0"
   },
   "files": [
     "index.js",
