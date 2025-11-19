@@ -53,14 +53,14 @@ Configuration object defining reservation policies:
 ```javascript
 const RESERVATION_CONFIG = [
   {
-    tag: 'high_slots',
+    tag: 'editions',
     reservation: 'projects/{project}/locations/{location}/reservations/{name}',
     actions: [
       'project.dataset.table'
     ]
   },
   {
-    tag: 'low_slots',
+    tag: 'default',
     reservation: null,
     actions: []
   },
