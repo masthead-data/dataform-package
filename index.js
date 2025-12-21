@@ -107,7 +107,84 @@ function createReservationSetter(config) {
   }
 }
 
+/**
+ * Helper to apply reservation to a single action
+ * @param {Object} action - Dataform action object
+ * @param {Array} configSets - Preprocessed configuration
+ */
+function applyReservationToAction(action, configSets) {
+  // Skip if action doesn't support preOps
+  if (typeof action.preOps !== 'function') {
+    return
+  }
+
+  let actionName = null
+  if (action.proto && action.proto.target) {
+    const target = action.proto.target
+    actionName = `${target.database}.${target.schema}.${target.name}`
+  }
+
+  const reservation = findReservation(actionName, configSets)
+  if (reservation) {
+    if (reservation === 'none') {
+      action.preOps(`SET @@reservation='none';`)
+    } else {
+      action.preOps(`SET @@reservation='${reservation}';`)
+    }
+  }
+}
+
+/**
+ * Automatically applies reservation configurations to all actions in the project
+ * @param {Array} config - Array of reservation configuration objects
+ */
+function applyAutomaticReservations(config) {
+  const preprocessedConfig = preprocessConfig(config)
+
+  // 1. Process existing actions (in case this is called late)
+  if (global.dataform && global.dataform.actions) {
+    global.dataform.actions.forEach(action => {
+      applyReservationToAction(action, preprocessedConfig)
+    })
+  }
+
+  // 2. Monkeypatch global functions to intercept future actions
+  const globalMethods = ['publish', 'operate', 'assert']
+
+  globalMethods.forEach(methodName => {
+    if (typeof global[methodName] === 'function') {
+      const originalMethod = global[methodName]
+      global[methodName] = function (...args) {
+        const actionBuilder = originalMethod.apply(this, args)
+
+        // The action should be the last one added to the session
+        if (global.dataform && global.dataform.actions && global.dataform.actions.length > 0) {
+          const lastAction = global.dataform.actions[global.dataform.actions.length - 1]
+          applyReservationToAction(lastAction, preprocessedConfig)
+        }
+
+        return actionBuilder
+      }
+    }
+  })
+
+  // 3. Monkeypatch session-level methods for SQLX
+  if (global.dataform && typeof global.dataform.sqlxAction === 'function') {
+    const originalSqlxAction = global.dataform.sqlxAction
+    global.dataform.sqlxAction = function (...args) {
+      const result = originalSqlxAction.apply(this, args)
+
+      if (global.dataform && global.dataform.actions && global.dataform.actions.length > 0) {
+        const lastAction = global.dataform.actions[global.dataform.actions.length - 1]
+        applyReservationToAction(lastAction, preprocessedConfig)
+      }
+      return result
+    }
+  }
+}
+
 module.exports = {
   createReservationSetter,
-  getActionName
+  getActionName,
+  applyAutomaticReservations
 }

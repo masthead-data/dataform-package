@@ -38,12 +38,17 @@ const RESERVATION_CONFIG = [
   ...
 ];
 
+// Option 1: Manual Application (per file)
 const reservation_setter = reservations.createReservationSetter(RESERVATION_CONFIG);
 
 module.exports = {
   ...
   reservation_setter
 }
+
+// Option 2: Automatic Application (Global)
+// Place this in a new file, e.g., `definitions/reservations.js`
+reservations.applyAutomaticReservations(RESERVATION_CONFIG);
 ```
 
 ### Configuration Structure

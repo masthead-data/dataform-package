@@ -5,10 +5,6 @@ config {
   tags: ["default"]
 }
 
-pre_operations {
-  ${constant.setReservation(ctx)}
-}
-
 SELECT
   'no_specific_reservation' as reservation_type,
   CURRENT_TIMESTAMP() as created_at,

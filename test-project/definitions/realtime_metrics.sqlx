@@ -5,10 +5,6 @@ config {
   tags: ["production_critical"]
 }
 
-pre_operations {
-  ${constant.setReservation(ctx)}
-}
-
 SELECT
   CURRENT_TIMESTAMP() as event_timestamp,
   'realtime_metric' as metric_type,

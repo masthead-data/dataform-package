@@ -5,10 +5,6 @@ config {
   tags: ["production_critical"]
 }
 
-pre_operations {
-  ${constant.setReservation(ctx)}
-}
-
 SELECT
   DATE(CURRENT_TIMESTAMP()) as report_date,
   'critical_data' as metric_name,

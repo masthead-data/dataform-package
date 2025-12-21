@@ -5,10 +5,6 @@ config {
   tags: ["development"]
 }
 
-pre_operations {
-  ${constant.setReservation(ctx)}
-}
-
 SELECT
   'experimental' as table_type,
   CURRENT_DATE() as created_date,
