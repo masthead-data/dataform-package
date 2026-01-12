@@ -2,7 +2,7 @@
   "name": "test-dataform-project",
   "description": "Test Dataform project for dataform-package",
   "dependencies": {
-    "@dataform/cli": "3.0.39",
+    "@dataform/cli": "3.0.42",
     "@dataform/core": "3.0.39",
     "@masthead-data/dataform-package": "file:../"
   }
