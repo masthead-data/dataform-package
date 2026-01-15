@@ -4,7 +4,7 @@
   "description": "Masthead Data package for Dataform to optimize BigQuery resource usage",
   "main": "index.js",
   "scripts": {
-    "test": "jest && cd test-project && npm ci && npx @dataform/cli compile --json",
+    "test": "jest && cd test-project && npx @dataform/cli compile --json > compiled.json && node ../scripts/verify_compilation.js",
     "test:watch": "jest --watch",
     "lint": "eslint -c .github/linters/eslint.config.mjs .",
     "lint:fix": "eslint -c .github/linters/eslint.config.mjs --fix .",

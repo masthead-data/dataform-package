@@ -5,6 +5,12 @@ config {
   tags: ["production_critical"]
 }
 
+pre_operations {
+  CREATE TEMP FUNCTION AddFourAndDivide(x INT64, y INT64)
+    RETURNS FLOAT64
+    AS ((x + 4) / y);
+}
+
 SELECT
   DATE(CURRENT_TIMESTAMP()) as report_date,
   'critical_data' as metric_name,
