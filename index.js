@@ -141,7 +141,7 @@ function applyReservationToAction(action, configSets) {
   const reservation = findReservation(actionName, configSets)
   if (reservation) {
     const statement = reservation === 'none'
-      ? "SET @@reservation='none';"
+      ? 'SET @@reservation=\'none\';'
       : `SET @@reservation='${reservation}';`
 
     // For operation builders, the queries are often set AFTER the builder is created via .queries()
