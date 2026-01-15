@@ -127,7 +127,7 @@ function applyReservationToAction(action, configSets) {
   const reservation = findReservation(actionName, configSets)
   if (reservation) {
     if (reservation === 'none') {
-      action.preOps(`SET @@reservation='none';`)
+      action.preOps('SET @@reservation=\'none\';')
     } else {
       action.preOps(`SET @@reservation='${reservation}';`)
     }
