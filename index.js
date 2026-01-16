@@ -177,15 +177,27 @@ function applyReservationToAction(action, configSets) {
     // This handles both Builders (via .proto) and Compiled Objects (direct)
 
     // 1. Try contextablePreOps (Tables/Views Builders before resolution)
-    if (Array.isArray(action.contextablePreOps)) {
-      if (!action.contextablePreOps.includes(statement)) {
-        action.contextablePreOps.unshift(statement)
+    if (action.contextablePreOps) {
+      if (Array.isArray(action.contextablePreOps)) {
+        if (!action.contextablePreOps.includes(statement)) {
+          action.contextablePreOps.unshift(statement)
+        }
+      } else if (typeof action.contextablePreOps === 'string') {
+        if (!action.contextablePreOps.includes(statement)) {
+          action.contextablePreOps = [statement, action.contextablePreOps]
+        }
       }
     }
     // 2. Try contextableQueries (Operations Builders before resolution)
-    else if (Array.isArray(action.contextableQueries)) {
-      if (!action.contextableQueries.includes(statement)) {
-        action.contextableQueries.unshift(statement)
+    else if (action.contextableQueries) {
+      if (Array.isArray(action.contextableQueries)) {
+        if (!action.contextableQueries.includes(statement)) {
+          action.contextableQueries.unshift(statement)
+        }
+      } else if (typeof action.contextableQueries === 'string') {
+        if (!action.contextableQueries.includes(statement)) {
+          action.contextableQueries = [statement, action.contextableQueries]
+        }
       }
     }
     // 3. Try proto.preOps (Compiled Tables/Views or Resolved Builders)
@@ -197,14 +209,24 @@ function applyReservationToAction(action, configSets) {
         if (!proto.preOps.includes(statement)) {
           proto.preOps.unshift(statement)
         }
+      } else if (typeof proto.preOps === 'string') {
+        if (!proto.preOps.includes(statement)) {
+          proto.preOps = [statement, proto.preOps]
+        }
       } else if (hasPreOpsFn) {
         action.preOps(statement)
       }
     }
     // 4. Try proto.queries (Compiled Operations or Resolved Builders)
-    else if (Array.isArray(proto.queries)) {
-      if (!proto.queries.includes(statement)) {
-        proto.queries.unshift(statement)
+    else if (proto.queries) {
+      if (Array.isArray(proto.queries)) {
+        if (!proto.queries.includes(statement)) {
+          proto.queries.unshift(statement)
+        }
+      } else if (typeof proto.queries === 'string') {
+        if (!proto.queries.includes(statement)) {
+          proto.queries = [statement, proto.queries]
+        }
       }
     }
     // 5. Fallback to function API (likely Tables/Views)
