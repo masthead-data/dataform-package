@@ -20,6 +20,8 @@ export default [
         ctx: 'readonly',
         operate: 'readonly',
         assert: 'readonly',
+        applyAutomaticReservations: 'readonly',
+        RESERVATION_CONFIG: 'readonly',
       }
     },
     rules: {

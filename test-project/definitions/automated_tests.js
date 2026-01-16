@@ -1,8 +1,3 @@
-const { applyAutomaticReservations, RESERVATION_CONFIG } = require('../includes/constant')
-
-// Initialize automatic reservations
-applyAutomaticReservations(RESERVATION_CONFIG)
-
 // 1. Standard Table
 publish('test_table', {
   type: 'table',
