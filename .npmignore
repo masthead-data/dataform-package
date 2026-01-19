@@ -1,0 +1,22 @@
+# Test files and project
+test/
+test-project/
+scripts/
+
+# Development files
+.github/
+.eslintrc.json
+jest.config.js
+*.log
+node_modules/
+
+# Git files
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+
+# Documentation (keep README, CHANGELOG, LICENSE)
+CONTRIBUTING.md

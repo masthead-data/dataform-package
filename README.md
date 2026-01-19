@@ -10,39 +10,12 @@ This package is designed to optimize BigQuery resource usage by automatically as
 
 * **Cost optimization**: Automatically route high-priority workloads to reserved slots and low-priority workloads to on-demand pricing
 * **Resource efficiency**: Ensure critical data pipelines get guaranteed compute resources while non-critical tasks use flexible pricing
-* **Automated re-assignement**: Once configured, reservations are applied automatically based on action categorization
+* **Automated assignement**: Once configured, actions are automatically assigned to reservations based on action categorization
 * **Flexible configuration**: Easy adjustment of reservation policies through configuration updates
-
-## Compatibility
-
-This package is tested and compatible with:
-
-* **Dataform v2.4.2** (v2.x series)
-* **Dataform v3.0.42** (v3.x series)
-
-### Testing Across Versions
-
-To verify compatibility locally across all supported Dataform versions:
-
-```bash
-npm test
-```
-
-This command runs the matrix test suite which automatically:
-
-1. Iterates through all supported Dataform versions (v2 and v3).
-2. Manages configuration file conflicts (e.g., hiding `dataform.json` for v3).
-3. Executes unit tests and integration tests.
-
-For faster iteration on the currently installed version in `test-project`, you can run:
-
-```bash
-npm run test:single
-```
 
 ## Getting Started
 
-### Initial Setup
+### Installation
 
 Add the dependency to your `package.json`:
 
@@ -54,9 +27,9 @@ Add the dependency to your `package.json`:
 }
 ```
 
-and click **Install Packages** in Dataform UI.
+After adding the dependency, click **Install Packages** in Dataform UI.
 
-### Recommended: Automatic Application
+### Automated Assignment (Recommended)
 
 The easiest way to integrate this package is to use automated actions assignment. Create a configuration file (e.g., `definitions/_reservations.js`) that will assign actions to reservations as specified in your configuration:
 
@@ -86,9 +59,9 @@ autoAssignActions(RESERVATION_CONFIG);
 
 **Note:** If you have many files in the project we recommend to start the filename with an underscore (e.g., `_reservations.js`) to ensure it runs first in the Dataform queue.
 
-With automatic application, you don't need to add any reservation code to your individual action files — the package handles everything globally.
+With automated assignement, you don't need to edit your individual action files — the package handles everything globally.
 
-### Alternative: Manual Application
+### Manual Assignment (Optional)
 
 For more granular control, you can manually apply reservations per file. Create a setter function in your global scope under `/includes` directory:
 
@@ -145,9 +118,9 @@ Configuration arguments:
   * `null`: Use a default reservation
 * **actions**: Array of Dataform action names that are assigned to the reservation
 
-### Usage Examples (Manual Application)
+### Usage Examples (Manual Assignment)
 
-**Note:** These examples are only needed if you're using the manual application approach. With automatic application via `autoAssignActions()`, reservations are applied automatically and you don't need to add these calls to your action files.
+**Note:** These examples are only needed if you're using the manual assignment approach. With automatic assignment via `autoAssignActions()`, actions are automatically assigned to reservations and you don't need to edit your action files.
 
 #### `publish` actions
 
@@ -217,32 +190,36 @@ WHEN NOT MATCHED THEN INSERT (id, value) VALUES (S.id, S.value);
 
 ### `autoAssignActions(config)`
 
-**Primary Method** - Automatically applies reservation configurations to all actions in your Dataform project.
+Automatically intercepts all `publish()`, `operate()`, and `assert()` calls and assigns actions to the appropriate reservations based on action names
 
 * **Parameters:**
   * `config` (Array): Array of reservation configuration objects
 * **Returns:** `void`
 * **Usage:** Call once in a definitions file (e.g., `definitions/_reservations.js`)
-* **Behavior:** Automatically intercepts all `publish()`, `operate()`, and `assert()` calls and applies appropriate reservations based on action names
 
 ### `createReservationSetter(config)`
 
-**Secondary Method** - Creates a reservation setter function for manual application per action.
+Creates a reservation setter function for manual assignment per action when you need fine-grained control over which actions get reservations.
 
 * **Parameters:**
   * `config` (Array): Array of reservation configuration objects
 * **Returns:** `Function` - A setter function that accepts a Dataform context and returns the appropriate `SET @@reservation` SQL statement
-* **Usage:** Create in an includes file, then call in individual action files using `${reservation_setter(ctx)}`
-* **Use Case:** When you need fine-grained control over which actions get reservations
+* **Usage:** Create in an includes file (e.g., `/includes/reservations.js`), then call in individual action files using `${reservations.reservation_setter(ctx)}`
 
 ### `getActionName(ctx)`
 
-**Utility Method** - Extracts the action name from a Dataform context object.
+Extracts the action name from a Dataform context object.
 
 * **Parameters:**
   * `ctx` (Object): Dataform context object
 * **Returns:** `string|null` - The action name in format `database.schema.name`, or `null` if not found
-* **Usage:** Advanced use cases where you need to programmatically determine action names
+
+## Compatibility
+
+This package is tested and compatible with:
+
+* **Dataform v2.4.2** (v2.x series)
+* **Dataform v3.0.42** (v3.x series)
 
 ## Under the Hood
 
@@ -255,7 +232,7 @@ The package supports various Dataform contexts for action name detection:
 
 ### Reservation Lookup
 
-Actions are matched against the `RESERVATION_CONFIG` using exact string matching. The first matching reservation is applied. If no match is found, the default reservation (first entry with `null` reservation) is used. If no default is defined, no reservation override is applied.
+Actions are matched against the `RESERVATION_CONFIG` using exact string matching. The action is assigned to the first matching reservation. If no match is found, the actions is assigned to the default reservation (first entry with `null` reservation). If no default is defined, no reservation override is applied.
 
 ### SQL Generation
 
