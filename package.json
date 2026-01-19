@@ -1,6 +1,6 @@
 {
   "name": "@masthead-data/dataform-package",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Masthead Data package for Dataform to optimize BigQuery resource usage",
   "main": "index.js",
   "scripts": {

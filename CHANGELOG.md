@@ -19,6 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## [0.2.0] - 2026-01-19
+
+### Added
+
+- **`autoAssignActions()` method** - Primary integration approach that automatically assigns actions to reservations to all Dataform actions globally without requiring manual code in each action file
+- **Matrix testing infrastructure** - Automated testing across multiple Dataform versions (currently - v2.4.2 and v3.0.42)
+- **API Reference section** in README with comprehensive documentation of all exported methods
+
 ## [0.1.0] - 2025-10-27
 
 ### Changed
@@ -51,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Best practices guide
 - Troubleshooting section
 
-[Unreleased]: https://github.com/masthead-data/dataform-package/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/masthead-data/dataform-package/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/masthead-data/dataform-package/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/masthead-data/dataform-package/compare/v0.0.1...v0.1.0
 [0.0.1]: https://github.com/masthead-data/dataform-package/tree/v0.0.1

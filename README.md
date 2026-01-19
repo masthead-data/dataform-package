@@ -29,6 +29,7 @@ npm test
 ```
 
 This command runs the matrix test suite which automatically:
+
 1. Iterates through all supported Dataform versions (v2 and v3).
 2. Manages configuration file conflicts (e.g., hiding `dataform.json` for v3).
 3. Executes unit tests and integration tests.
@@ -48,7 +49,7 @@ Add the dependency to your `package.json`:
 ```json
 {
   "dependencies": {
-    "@masthead-data/dataform-package": "0.1.0"
+    "@masthead-data/dataform-package": "0.2.0"
   }
 }
 ```
@@ -57,28 +58,30 @@ and click **Install Packages** in Dataform UI.
 
 ### Recommended: Automatic Application
 
-The easiest way to integrate this package is to use automatic reservation application. Create a configuration file (e.g., `definitions/_reservations.js`) that will automatically apply reservations to all matching actions:
+The easiest way to integrate this package is to use automated actions assignment. Create a configuration file (e.g., `definitions/_reservations.js`) that will assign actions to reservations as specified in your configuration:
 
 ```javascript
-const { applyAutomaticReservations } = require("@masthead-data/dataform-package");
+const { autoAssignActions } = require("@masthead-data/dataform-package");
 
 const RESERVATION_CONFIG = [
   {
-    tag: 'production',
+    tag: 'editions',
     reservation: 'projects/{project}/locations/{location}/reservations/{name}',
     actions: [
-      'project.dataset.important_table',
-      'project.dataset.critical_view'
+      'project.dataset.table_name',
+      'project.dataset.operation_name'
     ]
   },
   {
-    tag: 'default',
-    reservation: null,
-    actions: []
+    tag: 'on_demand',
+    reservation: 'none',
+    actions: [
+      'project.dataset.another_table'
+    ]
   }
 ];
 
-applyAutomaticReservations(RESERVATION_CONFIG);
+autoAssignActions(RESERVATION_CONFIG);
 ```
 
 **Note:** If you have many files in the project we recommend to start the filename with an underscore (e.g., `_reservations.js`) to ensure it runs first in the Dataform queue.
@@ -144,7 +147,7 @@ Configuration arguments:
 
 ### Usage Examples (Manual Application)
 
-**Note:** These examples are only needed if you're using the manual application approach. With automatic application via `applyAutomaticReservations()`, reservations are applied automatically and you don't need to add these calls to your action files.
+**Note:** These examples are only needed if you're using the manual application approach. With automatic application via `autoAssignActions()`, reservations are applied automatically and you don't need to add these calls to your action files.
 
 #### `publish` actions
 
@@ -212,7 +215,7 @@ WHEN NOT MATCHED THEN INSERT (id, value) VALUES (S.id, S.value);
 
 ## API Reference
 
-### `applyAutomaticReservations(config)`
+### `autoAssignActions(config)`
 
 **Primary Method** - Automatically applies reservation configurations to all actions in your Dataform project.
 
@@ -261,3 +264,9 @@ Based on the matched reservation, the system generates appropriate SQL:
 * **Specific Reservation**: `SET @@reservation='projects/{project}/locations/{location}/reservations/{name}';`
 * **On-demand**: `SET @@reservation='none';`
 * **Default/Null**: Empty string (no reservation override)
+
+### Limitations
+
+**Validation:** No format validation for reservation strings - relies on BigQuery errors
+**Duplicate Detection:** No check if user manually added `SET @@reservation` statements
+**Schema auto-detection:** Config requires explicit `database.schema.action` format - no automatic project/dataset inference

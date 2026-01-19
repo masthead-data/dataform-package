@@ -240,7 +240,7 @@ function applyReservationToAction(action, configSets) {
  * Automatically applies reservation configurations to all actions in the project
  * @param {Array} config - Array of reservation configuration objects
  */
-function applyAutomaticReservations(config) {
+function autoAssignActions(config) {
   const preprocessedConfig = preprocessConfig(config)
 
   // 1. Process existing actions (in case this is called late)
@@ -288,5 +288,5 @@ function applyAutomaticReservations(config) {
 module.exports = {
   createReservationSetter,
   getActionName,
-  applyAutomaticReservations
+  autoAssignActions
 }
