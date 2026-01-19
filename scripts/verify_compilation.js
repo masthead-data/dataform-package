@@ -10,7 +10,15 @@ function verify() {
     process.exit(1)
   }
 
-  const compiled = JSON.parse(fs.readFileSync(COMPILED_JSON_PATH, 'utf8'))
+  let fileContent = fs.readFileSync(COMPILED_JSON_PATH, 'utf8')
+
+  // Dataform v2.x outputs a log line before the JSON, skip it
+  const lines = fileContent.split('\n')
+  if (lines[0].startsWith('{\"level\":')) {
+    fileContent = lines.slice(1).join('\n')
+  }
+
+  const compiled = JSON.parse(fileContent)
   let errors = []
 
   const checkTable = (name, expectedPreOps) => {

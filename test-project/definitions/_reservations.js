@@ -1,2 +1,1 @@
-// Initialize automatic reservations
 reservations.applyAutomaticReservations(reservations.RESERVATION_CONFIG)
