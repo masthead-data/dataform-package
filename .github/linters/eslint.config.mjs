@@ -20,7 +20,6 @@ export default [
         ctx: 'readonly',
         operate: 'readonly',
         assert: 'readonly',
-        reservations: 'readonly',
       }
     },
     rules: {
