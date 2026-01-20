@@ -26,56 +26,13 @@ This script validates that reservations are prepended and that assertions are sk
 
 ## Testing Configuration
 
-### Local Integration Testing
-The `test-project` is configured to use the local version of the package. In `test-project/package.json`:
-```json
-"dependencies": {
-  "@masthead-data/dataform-package": "file:../"
-}
-```
-**Note:** `npm ci` or `npm install` in the `test-project` caches the local package. If you make changes to `index.js` and don't see them reflected, you may need to force an update or avoid `npm ci` during rapid iteration.
-
-### Running Tests
-
-#### Matrix Testing (Default)
-Run from the root to test all supported versions:
-```bash
-npm test
-```
-This automatically runs matrix tests across v2.4.2 and latest v3.X.X versions, managing config file conflicts.
-
-#### Single Version (Fast Iteration)
-For rapid development on the current version:
-```bash
-npm run test:single
-```
-This runs:
-1. `jest`: Unit tests for helper functions
-2. `dataform compile`: Generates the actual project graph
-3. `verify_compilation.js`: In-depth JSON inspection
-
-#### Specific Version
-Test a single Dataform version:
-```bash
-npm test -- 2.4.2
-```
-
-**Note:** Matrix tests handle `dataform.json` (v2) vs `workflow_settings.yaml` (v3) conflicts automatically with cleanup traps.
+See [CONTRIBUTING.md](../CONTRIBUTING.md#development-setup) for detailed testing instructions, including matrix testing and fast iteration modes.
 
 **CI Integration:** GitHub Actions runs matrix tests on every PR.
 
-## Package Architecture
+## Lockfile Maintenance
 
-### Exported Methods
-1. **`autoAssignActions(config)`** - Primary method: global monkeypatch of `publish()`, `operate()`, `assert()` and `sqlxAction()`
-2. **`createReservationSetter(config)`** - Secondary method: returns a function for manual per-file application
-3. **`getActionName(ctx)`** - Utility: extracts action names from Dataform contexts
-
-### Key Implementation Details
-- **Monkeypatching Strategy:** Intercepts global methods immediately after config is loaded (use `_reservations.js` prefix to run first)
-- **Config Preprocessing:** Converts `actions` arrays to Sets for O(1) lookup performance
-- **Builder Modification:** Always modify `contextablePreOps`/`contextableQueries` on builders, not proto objects
-- **Assertions:** Explicitly skipped to avoid SQL syntax errors in BigQuery
+See [CONTRIBUTING.md](../CONTRIBUTING.md#1-lockfile-maintenance) for details on handling platform-specific bindings and avoiding missing dependency errors in CI.
 
 ## Hard-Learned Dataform Nuances
 
@@ -94,13 +51,7 @@ Assertions in Dataform are strict. They expect a single `SELECT` statement. Prep
 
 ## Release Process
 
-1. Update `CHANGELOG.md` with version and changes
-2. Bump version in `package.json` and `README.md`
-3. Run `npm test` to verify matrix tests pass
-4. Commit and push to branch
-5. Create PR, ensure CI passes
-6. Merge to main
-7. Tag release: `npm run release --tag_version=x.y.z`
+See [CONTRIBUTING.md](../CONTRIBUTING.md#release-process) for the full release workflow steps.
 
 ## Known Limitations & Future Work
 

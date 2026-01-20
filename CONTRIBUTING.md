@@ -19,19 +19,27 @@ We welcome contributions to the Dataform package! This document provides guideli
 
 3. **Run tests:**
 
+   #### Matrix Testing (Default)
+   Run from the root to test all supported versions:
    ```bash
    npm test
    ```
+   This command iterates through all supported Dataform versions (currently v2.4.2 and v3.X.X), managing configuration file conflicts automatically.
 
-   This command runs the matrix test suite which automatically:
-
-   1. Iterates through all supported Dataform versions (v2 and v3).
-   2. Executes unit tests and integration tests.
-
-   For faster iteration on the currently installed version in `test-project`, you can run:
-
+   #### Single Version (Fast Iteration)
+   For rapid development on the version currently installed in `test-project`:
    ```bash
    npm run test:single
+   ```
+   This runs:
+   1. `jest`: Unit tests for helper functions.
+   2. `dataform compile`: Generates the actual project graph.
+   3. `verify_compilation.js`: In-depth JSON inspection.
+
+   #### Specific Version
+   Test a single Dataform version:
+   ```bash
+   npm test -- 2.4.2
    ```
 
 4. **Run linting:**
@@ -39,6 +47,15 @@ We welcome contributions to the Dataform package! This document provides guideli
    ```bash
    npm run lint
    ```
+
+### Local Integration Testing
+The `test-project` is configured to use the local version of the package. In `test-project/package.json`:
+```json
+"dependencies": {
+  "@masthead-data/dataform-package": "file:../"
+}
+```
+**Note:** `npm ci` or `npm install` in the `test-project` caches the local package. If you make changes to `index.js` and don't see them reflected, you may need to force an update or avoid `npm ci` during rapid iteration.
 
 ## Project Structure
 
@@ -55,21 +72,33 @@ dataform-package/
 
 ## Making Changes
 
-### 1. Code Style
+### 1. Lockfile Maintenance
+
+This project uses `npm ci` in CI/CD pipelines, which requires `package-lock.json` to be perfectly in sync with `package.json`.
+
+**Critical: Platform-Specific Bindings**
+The project includes optional platform-specific dependencies (e.g., `@unrs/resolver-binding-*`). If you update dependencies on macOS, `npm` might "clean" other platform bindings from the lockfile, causing CI to fail on Linux.
+
+If CI fails with `npm error EUSAGE` related to missing platform bindings:
+1. Restore the `package-lock.json` to a known good state.
+2. Run `npm install` to update the version/dependencies without removing optional bindings.
+3. Verify that the lockfile still contains entries for `@unrs/resolver-binding-linux-*` before committing.
+
+### 2. Code Style
 
 - Follow the existing code style
 - Use ESLint for code formatting: `npm run lint`
 - Write meaningful commit messages
 - Include tests for new functionality
 
-### 2. Testing
+### 3. Testing
 
 - Write comprehensive tests for any new features
 - Ensure all existing tests pass: `npm test`
 - Aim for high test coverage
 - Test edge cases and error conditions
 
-### 3. Documentation
+### 4. Documentation
 
 - Update README.md for new features
 - Add examples for new functionality
@@ -130,10 +159,13 @@ For feature requests, please provide:
 
 ## Release Process
 
-1. Update version in `package.json`
-2. Update `CHANGELOG.md` with new version details
-3. Run release script: `npm run release --tag_version=x.y.z`
-4. Publish to npm: `npm publish`
+1. Update `CHANGELOG.md` with version and changes following [Keep a Changelog](https://keepachangelog.com/) format.
+2. Bump version in `package.json` () and `README.md`.
+3. Run `npm test` to verify matrix tests pass across all supported Dataform versions.
+4. Commit and push to a feature branch.
+5. Create a Pull Request and ensure all CI checks pass.
+6. Merge to `main`.
+7. Execute the release script from the `main` branch: `npm run release --tag_version=x.y.z`.
 
 ## Questions?
 
