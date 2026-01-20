@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **`autoAssignActions()` method** - Primary integration approach that automatically assigns actions to reservations to all Dataform actions globally without requiring manual code in each action file
-- **Matrix testing infrastructure** - Automated testing across multiple Dataform versions (currently - v2.4.2 and v3.0.42)
+- **Matrix testing infrastructure** - Automated testing across multiple Dataform versions (currently - v2.4.2 and v3.0.43)
 - **API Reference section** in README with comprehensive documentation of all exported methods
 
 ## [0.1.0] - 2025-10-27

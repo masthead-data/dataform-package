@@ -5,7 +5,7 @@ set -e
 if [ $# -gt 0 ]; then
   VERSIONS=("$@")
 else
-  VERSIONS=("2.4.2" "3.0.42")
+  VERSIONS=("2.4.2" "3.0.43")
 fi
 
 # Cleanup function to restore configuration files

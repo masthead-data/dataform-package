@@ -42,7 +42,7 @@ Run from the root to test all supported versions:
 ```bash
 npm test
 ```
-This automatically runs matrix tests across v2.4.2 and v3.0.42, managing config file conflicts.
+This automatically runs matrix tests across v2.4.2 and latest v3.X.X versions, managing config file conflicts.
 
 #### Single Version (Fast Iteration)
 For rapid development on the current version:

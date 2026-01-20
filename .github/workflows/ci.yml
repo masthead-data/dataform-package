@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dataform-version: ['2.4.2', '3.0.42']
+        dataform-version: ['2.4.2', '3.0.43']
 
     steps:
       - name: Checkout code

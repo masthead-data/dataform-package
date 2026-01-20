@@ -218,8 +218,8 @@ Extracts the action name from a Dataform context object.
 
 This package is tested and compatible with:
 
-* **Dataform v2.4.2** (v2.x series)
-* **Dataform v3.0.42** (v3.x series)
+* **Dataform v2.4.2**
+* **Dataform v3 - latest version**
 
 ## Under the Hood
 
