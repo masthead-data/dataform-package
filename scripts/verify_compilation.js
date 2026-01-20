@@ -14,7 +14,7 @@ function verify() {
 
   // Dataform v2.x outputs a log line before the JSON, skip it
   const lines = fileContent.split('\n')
-  if (lines[0].startsWith('{\"level\":')) {
+  if (lines[0].startsWith('{"level":')) {
     fileContent = lines.slice(1).join('\n')
   }
 
@@ -67,22 +67,22 @@ function verify() {
     }
   }
 
-  console.log('--- Verifying Dataform Package Integration ---');
+  console.log('--- Verifying Dataform Package Integration ---')
 
   // Verify automated tests (Pre-initialization case)
-  console.log('Checking Pre-initialization actions...');
-  checkTable('test_table');
-  checkTable('test_view');
-  checkTable('test_incremental', 'DECLARE test_var INT64 DEFAULT 1;');
-  checkOperation('test_operation', 'CREATE OR REPLACE TEMP TABLE temp_val AS SELECT 1 as val;');
-  checkOperation('test_single_op', 'SELECT 1 as single_val');
-  checkAssertion('test_assertion_skipped');
+  console.log('Checking Pre-initialization actions...')
+  checkTable('test_table')
+  checkTable('test_view')
+  checkTable('test_incremental', 'DECLARE test_var INT64 DEFAULT 1;')
+  checkOperation('test_operation', 'CREATE OR REPLACE TEMP TABLE temp_val AS SELECT 1 as val;')
+  checkOperation('test_single_op', 'SELECT 1 as single_val')
+  checkAssertion('test_assertion_skipped')
 
   // Verify automated tests (Post-initialization case)
-  console.log('Checking Post-initialization actions...');
-  checkTable('test_table_post');
-  checkOperation('test_operation_post', 'SELECT 2 as op_val');
-  checkAssertion('test_assertion_post_skipped');
+  console.log('Checking Post-initialization actions...')
+  checkTable('test_table_post')
+  checkOperation('test_operation_post', 'SELECT 2 as op_val')
+  checkAssertion('test_assertion_post_skipped')
 
   if (errors.length > 0) {
     console.error('FAIL: Verification errors found:')
