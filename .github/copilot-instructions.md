@@ -100,7 +100,7 @@ Assertions in Dataform are strict. They expect a single `SELECT` statement. Prep
 4. Commit and push to branch
 5. Create PR, ensure CI passes
 6. Merge to main
-7. Tag release: `npm run release --version=x.y.z`
+7. Tag release: `npm run release --tag_version=x.y.z`
 
 ## Known Limitations & Future Work
 

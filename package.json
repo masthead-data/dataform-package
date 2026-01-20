@@ -9,7 +9,7 @@
     "test:watch": "jest --watch",
     "lint": "eslint -c .github/linters/eslint.config.mjs .",
     "lint:fix": "eslint -c .github/linters/eslint.config.mjs --fix .",
-    "release": "node -e \"const v = process.env.npm_config_version; if (!v) { console.error('Error: version parameter is required. Use: npm run release --version=x.y.z'); process.exit(1); } const { execSync } = require('child_process'); execSync(`git tag -a v${v} -m 'Release v${v}'`, { stdio: 'inherit' }); execSync(`git push origin v${v}`, { stdio: 'inherit' }); console.log(`✓ Successfully added a tag v${v}`);\""
+    "release": "./scripts/release.sh"
   },
   "keywords": [
     "dataform",
