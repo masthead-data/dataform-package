@@ -6,7 +6,9 @@ config {
 }
 
 pre_operations {
-  ${constant.setReservation(ctx)}
+  CREATE TEMP FUNCTION AddFourAndDivide(x INT64, y INT64)
+    RETURNS FLOAT64
+    AS ((x + 4) / y);
 }
 
 SELECT

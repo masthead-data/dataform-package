@@ -3,9 +3,7 @@ publish('large_data_processing', {
   schema: 'test',
   description: 'Large batch processing job using batch reservation',
   tags: ['batch_processing']
-}).preOps(ctx => `
-  ${constant.setReservation(ctx)}
-`).query(`
+}).query(`
   SELECT
     DATE(ts) as processing_date,
     COUNT(*) as record_count,

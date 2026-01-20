@@ -8,6 +8,9 @@ on:
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dataform-version: ['2.4.2', '3.0.43']
 
     steps:
       - name: Checkout code
@@ -25,8 +28,8 @@ jobs:
       - name: Run linter
         run: npm run lint
 
-      - name: Run tests
-        run: npm test
+      - name: Run tests (Dataform ${{ matrix.dataform-version }})
+        run: npm test -- ${{ matrix.dataform-version }}
 
 
   dependabot:

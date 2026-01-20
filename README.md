@@ -10,41 +10,76 @@ This package is designed to optimize BigQuery resource usage by automatically as
 
 * **Cost optimization**: Automatically route high-priority workloads to reserved slots and low-priority workloads to on-demand pricing
 * **Resource efficiency**: Ensure critical data pipelines get guaranteed compute resources while non-critical tasks use flexible pricing
-* **Automated re-assignement**: Once configured, reservations are applied automatically based on action categorization
+* **Automated assignement**: Once configured, actions are automatically assigned to reservations based on action categorization
 * **Flexible configuration**: Easy adjustment of reservation policies through configuration updates
 
 ## Getting Started
 
-### Initial Setup
+### Installation
 
 Add the dependency to your `package.json`:
 
 ```json
 {
   "dependencies": {
-    "@masthead-data/dataform-package": "0.1.0"
+    "@masthead-data/dataform-package": "0.2.0"
   }
 }
 ```
 
-and click **Install Packages** in Dataform UI.
+After adding the dependency, click **Install Packages** in Dataform UI.
 
-Then, import the package and create a setter function in your global scope under `/includes` directory:
+### Automated Assignment (Recommended)
+
+The easiest way to integrate this package is to use automated actions assignment. Create a configuration file (e.g., `definitions/_reservations.js`) that will assign actions to reservations as specified in your configuration:
 
 ```javascript
-const reservations = require("@masthead-data/dataform-package");
+const { autoAssignActions } = require("@masthead-data/dataform-package");
+
+const RESERVATION_CONFIG = [
+  {
+    tag: 'editions',
+    reservation: 'projects/{project}/locations/{location}/reservations/{name}',
+    actions: [
+      'project.dataset.table_name',
+      'project.dataset.operation_name'
+    ]
+  },
+  {
+    tag: 'on_demand',
+    reservation: 'none',
+    actions: [
+      'project.dataset.another_table'
+    ]
+  }
+];
+
+autoAssignActions(RESERVATION_CONFIG);
+```
+
+**Note:** If you have many files in the project we recommend to start the filename with an underscore (e.g., `_reservations.js`) to ensure it runs first in the Dataform queue.
+
+With automated assignement, you don't need to edit your individual action files — the package handles everything globally.
+
+### Manual Assignment (Optional)
+
+For more granular control, you can manually apply reservations per file. Create a setter function in your global scope under `/includes` directory:
+
+```javascript
+const { createReservationSetter } = require("@masthead-data/dataform-package");
 
 const RESERVATION_CONFIG = [
   ...
 ];
 
-const reservation_setter = reservations.createReservationSetter(RESERVATION_CONFIG);
+const reservation_setter = createReservationSetter(RESERVATION_CONFIG);
 
 module.exports = {
-  ...
   reservation_setter
 }
 ```
+
+Then use `${reservation_setter(ctx)}` in each action file where you want to apply reservations (see usage examples below).
 
 ### Configuration Structure
 
@@ -83,7 +118,9 @@ Configuration arguments:
   * `null`: Use a default reservation
 * **actions**: Array of Dataform action names that are assigned to the reservation
 
-### Usage examples
+### Usage Examples (Manual Assignment)
+
+**Note:** These examples are only needed if you're using the manual assignment approach. With automatic assignment via `autoAssignActions()`, actions are automatically assigned to reservations and you don't need to edit your action files.
 
 #### `publish` actions
 
@@ -149,7 +186,40 @@ WHEN NOT MATCHED THEN INSERT (id, value) VALUES (S.id, S.value);
 `);
 ```
 
-Example implementation can be found in [https://github.com/HTTPArchive/dataform](https://github.com/HTTPArchive/dataform).
+## API Reference
+
+### `autoAssignActions(config)`
+
+Automatically intercepts all `publish()`, `operate()`, and `assert()` calls and assigns actions to the appropriate reservations based on action names
+
+* **Parameters:**
+  * `config` (Array): Array of reservation configuration objects
+* **Returns:** `void`
+* **Usage:** Call once in a definitions file (e.g., `definitions/_reservations.js`)
+
+### `createReservationSetter(config)`
+
+Creates a reservation setter function for manual assignment per action when you need fine-grained control over which actions get reservations.
+
+* **Parameters:**
+  * `config` (Array): Array of reservation configuration objects
+* **Returns:** `Function` - A setter function that accepts a Dataform context and returns the appropriate `SET @@reservation` SQL statement
+* **Usage:** Create in an includes file (e.g., `/includes/reservations.js`), then call in individual action files using `${reservations.reservation_setter(ctx)}`
+
+### `getActionName(ctx)`
+
+Extracts the action name from a Dataform context object.
+
+* **Parameters:**
+  * `ctx` (Object): Dataform context object
+* **Returns:** `string|null` - The action name in format `database.schema.name`, or `null` if not found
+
+## Compatibility
+
+This package is tested and compatible with:
+
+* **Dataform v2.4.2**
+* **Dataform v3 - latest version**
 
 ## Under the Hood
 
@@ -162,7 +232,7 @@ The package supports various Dataform contexts for action name detection:
 
 ### Reservation Lookup
 
-Actions are matched against the `RESERVATION_CONFIG` using exact string matching. The first matching reservation is applied. If no match is found, the default reservation (first entry with `null` reservation) is used. If no default is defined, no reservation override is applied.
+Actions are matched against the `RESERVATION_CONFIG` using exact string matching. The action is assigned to the first matching reservation. If no match is found, the actions is assigned to the default reservation (first entry with `null` reservation). If no default is defined, no reservation override is applied.
 
 ### SQL Generation
 
@@ -171,3 +241,9 @@ Based on the matched reservation, the system generates appropriate SQL:
 * **Specific Reservation**: `SET @@reservation='projects/{project}/locations/{location}/reservations/{name}';`
 * **On-demand**: `SET @@reservation='none';`
 * **Default/Null**: Empty string (no reservation override)
+
+### Limitations
+
+**Validation:** No format validation for reservation strings - relies on BigQuery errors
+**Duplicate Detection:** No check if user manually added `SET @@reservation` statements
+**Schema auto-detection:** Config requires explicit `database.schema.action` format - no automatic project/dataset inference

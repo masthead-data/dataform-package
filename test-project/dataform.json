@@ -1,0 +1,7 @@
+{
+    "warehouse": "bigquery",
+    "defaultDatabase": "masthead-data",
+    "defaultLocation": "US",
+    "defaultSchema": "test",
+    "assertionSchema": "dataform_assertions"
+}

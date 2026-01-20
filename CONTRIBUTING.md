@@ -23,6 +23,17 @@ We welcome contributions to the Dataform package! This document provides guideli
    npm test
    ```
 
+   This command runs the matrix test suite which automatically:
+
+   1. Iterates through all supported Dataform versions (v2 and v3).
+   2. Executes unit tests and integration tests.
+
+   For faster iteration on the currently installed version in `test-project`, you can run:
+
+   ```bash
+   npm run test:single
+   ```
+
 4. **Run linting:**
 
    ```bash

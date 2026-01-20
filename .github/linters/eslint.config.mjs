@@ -18,6 +18,8 @@ export default [
         publish: 'readonly',
         constant: 'readonly',
         ctx: 'readonly',
+        operate: 'readonly',
+        assert: 'readonly',
       }
     },
     rules: {

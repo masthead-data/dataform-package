@@ -3,7 +3,7 @@
  * This file defines which actions should use which BigQuery reservations
  */
 
-const { createReservationSetter } = require('@masthead-data/dataform-package')
+const { autoAssignActions } = require('@masthead-data/dataform-package')
 
 const RESERVATION_CONFIG = [
   {
@@ -11,7 +11,8 @@ const RESERVATION_CONFIG = [
     reservation: 'projects/my-test-project/locations/US/reservations/production',
     actions: [
       'masthead-data.test.critical_dashboard',
-      'masthead-data.test.realtime_metrics'
+      'masthead-data.test.realtime_metrics',
+      'masthead-data.test.test'
     ]
   },
   {
@@ -31,12 +32,25 @@ const RESERVATION_CONFIG = [
     ]
   },
   {
+    tag: 'automated_tests',
+    reservation: 'projects/my-test-project/locations/US/reservations/automated',
+    actions: [
+      'masthead-data.test.test_table',
+      'masthead-data.test.test_view',
+      'masthead-data.test.test_incremental',
+      'masthead-data.test.test_operation',
+      'masthead-data.test.test_single_op',
+      'masthead-data.test.test_assertion_skipped',
+      'masthead-data.test.test_table_post',
+      'masthead-data.test.test_operation_post',
+      'masthead-data.test.test_assertion_post_skipped'
+    ]
+  },
+  {
     tag: 'default',
     reservation: null,
     actions: []
   }
 ]
 
-const setReservation = createReservationSetter(RESERVATION_CONFIG)
-
-module.exports = { setReservation }
+autoAssignActions(RESERVATION_CONFIG)
