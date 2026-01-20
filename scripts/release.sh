@@ -28,14 +28,14 @@ NEW_VERSION_TAG=$(npm version "$INPUT")
 
 if [ $? -eq 0 ]; then
   echo "✓ Successfully created version $NEW_VERSION_TAG"
-  
+
   # Push the commit and the tag
   CURRENT_BRANCH=$(git branch --show-current)
   echo "Pushing changes and tag to origin $CURRENT_BRANCH..."
-  
+
   # Push the current branch and the new tag
   git push origin "$CURRENT_BRANCH" && git push origin "$NEW_VERSION_TAG"
-  
+
   if [ $? -eq 0 ]; then
     echo "✓ Successfully pushed changes and $NEW_VERSION_TAG to origin"
   else
