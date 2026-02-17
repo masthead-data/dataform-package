@@ -488,5 +488,113 @@ describe('Dataform package', () => {
       ).length
       expect(reservationCount).toBe(1)
     })
+
+    test('should handle mixed case DECLARE at outer level', () => {
+      const config = [
+        {
+          tag: 'test',
+          reservation: 'projects/test/locations/US/reservations/prod',
+          actions: ['test-project.test-schema.mixed_case']
+        }
+      ]
+
+      autoAssignActions(config)
+      global.operate('mixed_case').queries(`
+        declare x INT64 DEFAULT 1;
+        SELECT x;
+      `)
+
+      const action = global.dataform.actions[0]
+      expect(action.proto.queries).not.toContain('SET @@reservation=\'projects/test/locations/US/reservations/prod\';')
+    })
+
+    test('should not skip DECLARE inside BEGIN...END block', () => {
+      const config = [
+        {
+          tag: 'test',
+          reservation: 'projects/test/locations/US/reservations/prod',
+          actions: ['test-project.test-schema.begin_declare']
+        }
+      ]
+
+      autoAssignActions(config)
+      global.operate('begin_declare').queries(`
+        --DECLARE x INT64 DEFAULT 1;
+        # comment
+        BEGIN
+          DECLARE x INT64 DEFAULT 1;
+          SELECT x;
+        END;
+      `)
+
+      const action = global.dataform.actions[0]
+      expect(action.proto.queries[0]).toBe('SET @@reservation=\'projects/test/locations/US/reservations/prod\';')
+    })
+
+    test('should not skip DECLARE inside EXECUTE IMMEDIATE', () => {
+      const config = [
+        {
+          tag: 'test',
+          reservation: 'projects/test/locations/US/reservations/prod',
+          actions: ['test-project.test-schema.exec_declare']
+        }
+      ]
+
+      autoAssignActions(config)
+      global.operate('exec_declare').queries(`
+        /*
+        block comment
+        DECLARE x INT64;
+        */
+        EXECUTE IMMEDIATE "DECLARE x INT64; SET x = 1; SELECT x;"
+      `)
+
+      const action = global.dataform.actions[0]
+      expect(action.proto.queries[0]).toBe('SET @@reservation=\'projects/test/locations/US/reservations/prod\';')
+    })
+
+    test('should skip DECLARE after SQL comments', () => {
+      const config = [
+        {
+          tag: 'test',
+          reservation: 'projects/test/locations/US/reservations/prod',
+          actions: ['test-project.test-schema.comment_declare']
+        }
+      ]
+
+      autoAssignActions(config)
+      global.operate('comment_declare').queries(`
+        -- set up variables
+        # comment
+        /* block comment */
+        /*
+        multi-line block comment
+        */
+        DECLARE x INT64 DEFAULT 1;
+        SELECT x;
+      `)
+
+      const action = global.dataform.actions[0]
+      expect(action.proto.queries).not.toContain('SET @@reservation=\'projects/test/locations/US/reservations/prod\';')
+    })
+
+    test('should handle array of queries with outer DECLARE', () => {
+      const config = [
+        {
+          tag: 'test',
+          reservation: 'projects/test/locations/US/reservations/prod',
+          actions: ['test-project.test-schema.array_queries']
+        }
+      ]
+
+      autoAssignActions(config)
+      global.operate('array_queries').queries([
+        'DECLARE x INT64 DEFAULT 1;',
+        'SELECT x;'
+      ])
+
+      const action = global.dataform.actions[0]
+      expect(action.proto.queries).not.toContain('SET @@reservation=\'projects/test/locations/US/reservations/prod\';')
+    })
   })
 })
