@@ -61,6 +61,13 @@ autoAssignActions(RESERVATION_CONFIG);
 
 With automated assignement, you don't need to edit your individual action files — the package handles everything globally.
 
+#### Limitations of Automated Assignment
+
+* `DECLARE` at the top level of the SQL (the first real statement after whitespace/comments).
+    The automation skips operations where `DECLARE` is the first statement at the outer level. BigQuery requires `DECLARE` to appear before any other statements in a script, so prepending `SET @@reservation` would cause a syntax error. This detection works automatically without any configuration needed.
+
+    Use manual assignment for any actions that require top-level `DECLARE` statements.
+
 ### Manual Assignment (Optional)
 
 For more granular control, you can manually apply reservations per file. Create a setter function in your global scope under `/includes` directory:

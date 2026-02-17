@@ -108,6 +108,42 @@ function createReservationSetter(config) {
 }
 
 /**
+ * Checks if SQL has a DECLARE statement at the outer (top) level.
+ * DECLARE inside BEGIN...END blocks or EXECUTE IMMEDIATE strings is not flagged.
+ * @param {string|Array} sql - SQL query or array of queries
+ * @returns {boolean} True if outer DECLARE detected
+ */
+function hasOuterDeclare(sql) {
+  if (Array.isArray(sql)) {
+    return sql.some(q => hasOuterDeclare(q))
+  }
+
+  // Strip leading whitespace and SQL comments to find the first real statement
+  let s = (sql || '').trimStart()
+  let changed = true
+  while (changed) {
+    changed = false
+    if (s.startsWith('--')) {
+      const idx = s.indexOf('\n')
+      s = idx === -1 ? '' : s.slice(idx + 1).trimStart()
+      changed = true
+    }
+    if (s.startsWith('#')) {
+      const idx = s.indexOf('\n')
+      s = idx === -1 ? '' : s.slice(idx + 1).trimStart()
+      changed = true
+    }
+    if (s.startsWith('/*')) {
+      const idx = s.indexOf('*/')
+      s = idx === -1 ? '' : s.slice(idx + 2).trimStart()
+      changed = true
+    }
+  }
+
+  return /^DECLARE\b/i.test(s)
+}
+
+/**
  * Helper to apply reservation to a single action
  * @param {Object} action - Dataform action object
  * @param {Array} configSets - Preprocessed configuration
@@ -150,6 +186,12 @@ function applyReservationToAction(action, configSets) {
       const originalQueriesFn = action.queries
       action.queries = function (queries) {
         let queriesArray = queries
+
+        // Check for outer DECLARE before wrapping
+        if (hasOuterDeclare(queries)) {
+          return originalQueriesFn.apply(this, [queries])
+        }
+
         if (typeof queries === 'function') {
           queriesArray = (ctx) => {
             const result = queries(ctx)
@@ -190,13 +232,16 @@ function applyReservationToAction(action, configSets) {
     }
     // 2. Try contextableQueries (Operations Builders before resolution)
     else if (action.contextableQueries) {
-      if (Array.isArray(action.contextableQueries)) {
-        if (!action.contextableQueries.includes(statement)) {
-          action.contextableQueries.unshift(statement)
-        }
-      } else if (typeof action.contextableQueries === 'string') {
-        if (!action.contextableQueries.includes(statement)) {
-          action.contextableQueries = [statement, action.contextableQueries]
+      // Skip if there is an outer DECLARE
+      if (!hasOuterDeclare(action.contextableQueries)) {
+        if (Array.isArray(action.contextableQueries)) {
+          if (!action.contextableQueries.includes(statement)) {
+            action.contextableQueries.unshift(statement)
+          }
+        } else if (typeof action.contextableQueries === 'string') {
+          if (!action.contextableQueries.includes(statement)) {
+            action.contextableQueries = [statement, action.contextableQueries]
+          }
         }
       }
     }
@@ -219,13 +264,16 @@ function applyReservationToAction(action, configSets) {
     }
     // 4. Try proto.queries (Compiled Operations or Resolved Builders)
     else if (proto.queries) {
-      if (Array.isArray(proto.queries)) {
-        if (!proto.queries.includes(statement)) {
-          proto.queries.unshift(statement)
-        }
-      } else if (typeof proto.queries === 'string') {
-        if (!proto.queries.includes(statement)) {
-          proto.queries = [statement, proto.queries]
+      // Skip if there is an outer DECLARE
+      if (!hasOuterDeclare(proto.queries)) {
+        if (Array.isArray(proto.queries)) {
+          if (!proto.queries.includes(statement)) {
+            proto.queries.unshift(statement)
+          }
+        } else if (typeof proto.queries === 'string') {
+          if (!proto.queries.includes(statement)) {
+            proto.queries = [statement, proto.queries]
+          }
         }
       }
     }
