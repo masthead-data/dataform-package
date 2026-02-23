@@ -49,6 +49,9 @@ For `operations`, the SQL is often set via `.queries(["SQL"])`. This method can 
 ### 4. Assertions
 Assertions in Dataform are strict. They expect a single `SELECT` statement. Prepending a `SET` statement will cause a syntax error in BigQuery because assertions are often wrapped in subqueries or views by Dataform. We explicitly skip assertions in this package.
 
+### 5. Outer DECLARE Detection
+Operations where `DECLARE` is the first statement at the outer level are automatically skipped. BigQuery requires `DECLARE` before any other statements in a script, so prepending `SET @@reservation` would fail. The package strips leading whitespace and SQL comments (`--`, `#`, `/* */`) to reliably detect this case. `DECLARE` inside `BEGIN...END` or `EXECUTE IMMEDIATE` is not flagged — reservation is applied normally in those cases.
+
 ## Release Process
 
 See [CONTRIBUTING.md](../CONTRIBUTING.md#release-process) for the full release workflow steps.
