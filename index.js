@@ -108,6 +108,36 @@ function createReservationSetter(config) {
 }
 
 /**
+ * Ensures a statement is prepended to an array or string
+ * @param {Array|string} target - The target to prepend to
+ * @param {string} statement - The statement to prepend
+ * @returns {Array|string} The modified target
+ */
+function prependStatement(target, statement) {
+  if (Array.isArray(target)) {
+    if (!target.includes(statement)) {
+      return [statement, ...target]
+    }
+    return target
+  }
+  if (typeof target === 'string') {
+    if (!target.includes(statement)) {
+      return [statement, target]
+    }
+  }
+  return target
+}
+
+/**
+ * Checks if a value is an array or string
+ * @param {any} val - The value to check
+ * @returns {boolean} True if array or string
+ */
+function isArrayOrString(val) {
+  return Array.isArray(val) || typeof val === 'string'
+}
+
+/**
  * Helper to apply reservation to a single action
  * @param {Object} action - Dataform action object
  * @param {Array} configSets - Preprocessed configuration
@@ -149,25 +179,9 @@ function applyReservationToAction(action, configSets) {
     if (isOperation && typeof action.queries === 'function' && !action._queriesPatched) {
       const originalQueriesFn = action.queries
       action.queries = function (queries) {
-        let queriesArray = queries
-        if (typeof queries === 'function') {
-          queriesArray = (ctx) => {
-            const result = queries(ctx)
-            if (typeof result === 'string') {
-              return [statement, result]
-            } else if (Array.isArray(result)) {
-              return [statement, ...result]
-            }
-            return result
-          }
-        } else if (typeof queries === 'string') {
-          queriesArray = [statement, queries]
-        } else if (Array.isArray(queries)) {
-          // Check if already prepended to avoid duplicates
-          if (!queries.includes(statement)) {
-            queriesArray = [statement, ...queries]
-          }
-        }
+        const queriesArray = typeof queries === 'function'
+          ? (ctx) => prependStatement(queries(ctx), statement)
+          : prependStatement(queries, statement)
         return originalQueriesFn.apply(this, [queriesArray])
       }
       action._queriesPatched = true
@@ -178,56 +192,27 @@ function applyReservationToAction(action, configSets) {
 
     // 1. Try contextablePreOps (Tables/Views Builders before resolution)
     if (action.contextablePreOps) {
-      if (Array.isArray(action.contextablePreOps)) {
-        if (!action.contextablePreOps.includes(statement)) {
-          action.contextablePreOps.unshift(statement)
-        }
-      } else if (typeof action.contextablePreOps === 'string') {
-        if (!action.contextablePreOps.includes(statement)) {
-          action.contextablePreOps = [statement, action.contextablePreOps]
-        }
-      }
+      action.contextablePreOps = prependStatement(action.contextablePreOps, statement)
     }
     // 2. Try contextableQueries (Operations Builders before resolution)
     else if (action.contextableQueries) {
-      if (Array.isArray(action.contextableQueries)) {
-        if (!action.contextableQueries.includes(statement)) {
-          action.contextableQueries.unshift(statement)
-        }
-      } else if (typeof action.contextableQueries === 'string') {
-        if (!action.contextableQueries.includes(statement)) {
-          action.contextableQueries = [statement, action.contextableQueries]
-        }
-      }
+      action.contextableQueries = prependStatement(action.contextableQueries, statement)
     }
     // 3. Try proto.preOps (Compiled Tables/Views or Resolved Builders)
     else if (hasType) {
       if (!proto.preOps) {
         proto.preOps = []
       }
-      if (Array.isArray(proto.preOps)) {
-        if (!proto.preOps.includes(statement)) {
-          proto.preOps.unshift(statement)
-        }
-      } else if (typeof proto.preOps === 'string') {
-        if (!proto.preOps.includes(statement)) {
-          proto.preOps = [statement, proto.preOps]
-        }
+
+      if (isArrayOrString(proto.preOps)) {
+        proto.preOps = prependStatement(proto.preOps, statement)
       } else if (hasPreOpsFn) {
         action.preOps(statement)
       }
     }
     // 4. Try proto.queries (Compiled Operations or Resolved Builders)
     else if (proto.queries) {
-      if (Array.isArray(proto.queries)) {
-        if (!proto.queries.includes(statement)) {
-          proto.queries.unshift(statement)
-        }
-      } else if (typeof proto.queries === 'string') {
-        if (!proto.queries.includes(statement)) {
-          proto.queries = [statement, proto.queries]
-        }
-      }
+      proto.queries = prependStatement(proto.queries, statement)
     }
     // 5. Fallback to function API (likely Tables/Views)
     else if (hasPreOpsFn) {
