@@ -5,60 +5,76 @@ set -e
 if [ $# -gt 0 ]; then
   VERSIONS=("$@")
 else
-  VERSIONS=("2.4.2" "3.0.43")
+  VERSIONS=("2.4.2" "3.0.43" "local")
 fi
+
+# Setup local path constant
+DATAFORM_LOCAL_PATH="${DATAFORM_LOCAL_PATH:-/Users/maxostapenko/GitHub/dataform}"
 
 # Cleanup function to restore configuration files
 cleanup() {
-  if [ -f "test-project/dataform.json.bak" ]; then
+  if [ -f "dataform.json.bak" ]; then
     echo "Restoring dataform.json"
-    mv "test-project/dataform.json.bak" "test-project/dataform.json"
+    mv "dataform.json.bak" "dataform.json"
   fi
-  if [ -f "test-project/workflow_settings.yaml.bak" ]; then
+  if [ -f "workflow_settings.yaml.bak" ]; then
     echo "Restoring workflow_settings.yaml"
-    mv "test-project/workflow_settings.yaml.bak" "test-project/workflow_settings.yaml"
+    mv "workflow_settings.yaml.bak" "workflow_settings.yaml"
   fi
 }
 
 # Ensure cleanup runs on exit (including failures)
 trap cleanup EXIT INT TERM
 
+# Run jest first to ensure the package is working
+npx jest
+
 echo "Running matrix tests across Dataform versions..."
+cd test-project
 
 for VERSION in "${VERSIONS[@]}"; do
   echo ""
   echo "========================================="
-  echo "Testing with Dataform v$VERSION"
+  echo "Testing with Dataform $VERSION"
   echo "========================================="
 
   # Configuration management based on version
-  if [[ $VERSION == 3* ]]; then
-    if [ -f "test-project/dataform.json" ]; then
+  if [[ $VERSION == 3* || $VERSION == "local" ]]; then
+    if [ -f "dataform.json" ]; then
       echo "Hiding dataform.json for v3 compatibility"
-      mv test-project/dataform.json test-project/dataform.json.bak
+      mv dataform.json dataform.json.bak
     fi
   elif [[ $VERSION == 2* ]]; then
-    if [ -f "test-project/workflow_settings.yaml" ]; then
+    if [ -f "workflow_settings.yaml" ]; then
       echo "Hiding workflow_settings.yaml for v2 compatibility"
-      mv test-project/workflow_settings.yaml test-project/workflow_settings.yaml.bak
+      mv workflow_settings.yaml workflow_settings.yaml.bak
     fi
   fi
 
-  # Install specific version
-  echo "Installing Dataform @$VERSION..."
-  cd test-project
-  # Use --no-save to avoid cluttering package.json/package-lock.json during matrix tests
-  npm install @dataform/cli@$VERSION @dataform/core@$VERSION --no-save
-  cd ..
+  # Clean up previously installed versions to avoid conflicts
+  # echo "Cleaning up previous @dataform installations..."
+  # npm uninstall @dataform/cli @dataform/core --no-save > /dev/null 2>&1 || true
 
-  # Run tests using the single version command
-  npm run test:single
+  if [[ "$VERSION" == "local" ]]; then
+    echo "Using local Dataform dependency from $DATAFORM_LOCAL_PATH..."
+    npm install "$DATAFORM_LOCAL_PATH/bazel-bin/packages/@dataform/cli/package" "$DATAFORM_LOCAL_PATH/bazel-bin/packages/@dataform/core/package" --no-save
+  else
+    echo "Installing Dataform @$VERSION..."
+    # Use --no-save to avoid cluttering package.json/package-lock.json during matrix tests
+    npm install @dataform/cli@$VERSION @dataform/core@$VERSION --no-save
+  fi
+
+  # Run tests using the single version command equivalent but passing the version
+  npx @dataform/cli compile --json --vars=DATAFORM_VERSION=$VERSION > compiled.json
+  node ../scripts/verify_compilation.js $VERSION
 
   # Restore files after the run so the next version has a clean state
   cleanup
 
-  echo "✓ Dataform v$VERSION tests passed"
+  echo "✓ Dataform $VERSION tests passed"
 done
+
+cd ..
 
 echo ""
 echo "========================================="

@@ -225,8 +225,8 @@ Extracts the action name from a Dataform context object.
 
 This package is tested and compatible with:
 
-* **Dataform v2.4.2**
-* **Dataform v3 - latest version**
+* **Dataform v2.x** (e.g., v2.4.2)
+* **Dataform v3.x**
 
 ## Under the Hood
 
@@ -241,13 +241,14 @@ The package supports various Dataform contexts for action name detection:
 
 Actions are matched against the `RESERVATION_CONFIG` using exact string matching. The action is assigned to the first matching reservation. If no match is found, the actions is assigned to the default reservation (first entry with `null` reservation). If no default is defined, no reservation override is applied.
 
-### SQL Generation
+### Reservation Assignment Implementation
 
-Based on the matched reservation, the system generates appropriate SQL:
+Based on the matched reservation, the package automatically prepends the `SET @@reservation` SQL statement to your queries or pre-operations.
 
-* **Specific Reservation**: `SET @@reservation='projects/{project}/locations/{location}/reservations/{name}';`
-* **On-demand**: `SET @@reservation='none';`
-* **Default/Null**: Empty string (no reservation override)
+The specific reservation value applied follows this logic:
+* **Specific Reservation**: `projects/{project}/locations/{location}/reservations/{name}`
+* **On-demand**: `none`
+* **Default/Null**: No reservation override applied
 
 ### Limitations
 
