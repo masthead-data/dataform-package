@@ -61,6 +61,13 @@ autoAssignActions(RESERVATION_CONFIG);
 
 With automated assignement, you don't need to edit your individual action files — the package handles everything globally.
 
+#### Limitations of Automated Assignment
+
+* `DECLARE` at the top level of the SQL (the first real statement after whitespace/comments).
+    The automation skips operations where `DECLARE` is the first statement at the outer level. BigQuery requires `DECLARE` to appear before any other statements in a script, so prepending `SET @@reservation` would cause a syntax error. This detection works automatically without any configuration needed.
+
+    Use manual assignment for any actions that require top-level `DECLARE` statements.
+
 ### Manual Assignment (Optional)
 
 For more granular control, you can manually apply reservations per file. Create a setter function in your global scope under `/includes` directory:
@@ -218,8 +225,8 @@ Extracts the action name from a Dataform context object.
 
 This package is tested and compatible with:
 
-* **Dataform v2.4.2**
-* **Dataform v3 - latest version**
+* **Dataform v2.x** (e.g., v2.4.2)
+* **Dataform v3.x**
 
 ## Under the Hood
 
@@ -234,13 +241,14 @@ The package supports various Dataform contexts for action name detection:
 
 Actions are matched against the `RESERVATION_CONFIG` using exact string matching. The action is assigned to the first matching reservation. If no match is found, the actions is assigned to the default reservation (first entry with `null` reservation). If no default is defined, no reservation override is applied.
 
-### SQL Generation
+### Reservation Assignment Implementation
 
-Based on the matched reservation, the system generates appropriate SQL:
+Based on the matched reservation, the package automatically prepends the `SET @@reservation` SQL statement to your queries or pre-operations.
 
-* **Specific Reservation**: `SET @@reservation='projects/{project}/locations/{location}/reservations/{name}';`
-* **On-demand**: `SET @@reservation='none';`
-* **Default/Null**: Empty string (no reservation override)
+The specific reservation value applied follows this logic:
+* **Specific Reservation**: `projects/{project}/locations/{location}/reservations/{name}`
+* **On-demand**: `none`
+* **Default/Null**: No reservation override applied
 
 ### Limitations
 

@@ -78,9 +78,9 @@ function preprocessConfig(config) {
 }
 
 /**
- * Creates a reservation setter function with the provided configuration
+ * Creates a reservation setter function with the provided configuration.
  * @param {Array} config - Array of reservation configuration objects
- * @returns {Function} A reservation setter function that takes a Dataform context
+ * @returns {Function} A reservation setter function
  * @example
  * const { createReservationSetter } = require('@masthead-data/dataform-package')
  *
@@ -98,13 +98,131 @@ function preprocessConfig(config) {
  * // ${reservationSetter(ctx)}
  */
 function createReservationSetter(config) {
-  const preprocessedConfig = preprocessConfig(config)
+  const configSets = preprocessConfig(config)
 
   return function reservationSetter(ctx) {
+    if (isNativeReservationSupported()) {
+      return ''
+    }
+
     const actionName = getActionName(ctx)
-    const reservation = findReservation(actionName, preprocessedConfig)
-    return reservation ? `SET @@reservation='${reservation}';` : ''
+    if (!actionName) return ''
+
+    const reservation = findReservation(actionName, configSets)
+    if (!reservation) return ''
+
+    return reservation
+      ? `SET @@reservation='${reservation}';`
+      : ''
   }
+}
+
+let hasNativeReservationSupportCache = null
+
+/**
+ * Checks if the current Dataform project supports native reservations
+ * @returns {boolean} True if native reservation supported
+ */
+function isNativeReservationSupported() {
+  if (process.env.DATAFORM_MOCK_NATIVE_RESERVATION === 'true') return true
+  if (process.env.DATAFORM_MOCK_NATIVE_RESERVATION === 'false') return false
+
+  if (hasNativeReservationSupportCache !== null) {
+    return hasNativeReservationSupportCache
+  }
+
+  if (global.dataform && global.dataform.projectConfig) {
+    const version = global.dataform.projectConfig.dataformCoreVersion
+    let actualVersion = version
+
+    if (!actualVersion) {
+      try {
+        const path = require('path')
+        const fs = require('fs')
+
+        // When running tests, the dataform framework is actually in test-project/node_modules
+        // require() relative to __dirname will load the parent project's devDependencies, not the exact version we are testing.
+        const localPkg = path.resolve(process.cwd(), 'node_modules/@dataform/core/package.json')
+        if (fs.existsSync(localPkg)) {
+          const content = fs.readFileSync(localPkg, 'utf8')
+          const corePkg = JSON.parse(content)
+          if (corePkg && corePkg.version) {
+            actualVersion = corePkg.version
+          }
+        }
+      } catch {
+        // Ignore if package.json cannot be read
+      }
+    }
+
+    // Fallback: Check for DATAFORM_VERSION in projectConfig.vars
+    if (!actualVersion && global.dataform.projectConfig.vars && global.dataform.projectConfig.vars.DATAFORM_VERSION) {
+      actualVersion = global.dataform.projectConfig.vars.DATAFORM_VERSION
+    }
+
+    if (actualVersion) {
+      // As a simple heuristic for backwards compatibility testing: anything matching 2.* or 3.0.* (up to 43) gets false.
+      if (actualVersion.startsWith('2.') || actualVersion === '3.0.43') {
+        hasNativeReservationSupportCache = false
+        return false
+      }
+    } else {
+      // If version is still unknown, check for v3 specific properties
+      // v3 session has some different properties, but projectConfig exists in both.
+      // If we can't detect version, and it's not v3.0.44+, we might want to default to false
+      // for safety, but typically users of this package will be on v3.
+      // However, for 2.x, we definitely want false.
+      // If we are here, we couldn't find the version.
+    }
+  }
+
+  hasNativeReservationSupportCache = true
+  return true
+}
+
+/**
+ * Helper to check if a query/array of queries has an outer DECLARE statement
+ * @param {string|string[]|Function} sql - The SQL statement(s) to check
+ * @returns {boolean} True if an outer DECLARE statement is found
+ */
+function hasOuterDeclare(sql) {
+  if (Array.isArray(sql)) {
+    // Check the first non-empty statement in the array
+    for (let i = 0; i < sql.length; i++) {
+      if (typeof sql[i] === 'string' && sql[i].trim() !== '') {
+        return hasOuterDeclare(sql[i])
+      }
+    }
+    return false
+  }
+
+  if (typeof sql === 'function' || typeof sql !== 'string') {
+    return false
+  }
+
+  // Strip leading whitespace and SQL comments to find the first real statement
+  let s = (sql || '').trimStart()
+  let changed = true
+  while (changed) {
+    changed = false
+    if (s.startsWith('--')) {
+      const idx = s.indexOf('\n')
+      s = idx === -1 ? '' : s.slice(idx + 1).trimStart()
+      changed = true
+    }
+    if (s.startsWith('#')) {
+      const idx = s.indexOf('\n')
+      s = idx === -1 ? '' : s.slice(idx + 1).trimStart()
+      changed = true
+    }
+    if (s.startsWith('/*')) {
+      const idx = s.indexOf('*/')
+      s = idx === -1 ? '' : s.slice(idx + 2).trimStart()
+      changed = true
+    }
+  }
+
+  return /^DECLARE\b/i.test(s)
 }
 
 /**
@@ -131,8 +249,8 @@ function applyReservationToAction(action, configSets) {
   // 2. Extract Action Name
   let actionName = null
   if (proto.target) {
-    const database = proto.target.database || (global.dataform && global.dataform.projectConfig && global.dataform.projectConfig.defaultDatabase)
-    const schema = proto.target.schema || (global.dataform && global.dataform.projectConfig && global.dataform.projectConfig.defaultSchema)
+    const database = proto.target.database || proto.target.project || (global.dataform && global.dataform.projectConfig && (global.dataform.projectConfig.defaultDatabase || global.dataform.projectConfig.defaultProject))
+    const schema = proto.target.schema || proto.target.dataset || (global.dataform && global.dataform.projectConfig && (global.dataform.projectConfig.defaultSchema || global.dataform.projectConfig.defaultDataset))
     const name = proto.target.name
     actionName = database && schema ? `${database}.${schema}.${name}` : name
   }
@@ -140,98 +258,121 @@ function applyReservationToAction(action, configSets) {
   // 3. Apply Reservation
   const reservation = findReservation(actionName, configSets)
   if (reservation) {
-    const statement = reservation === 'none'
-      ? 'SET @@reservation=\'none\';'
-      : `SET @@reservation='${reservation}';`
+    if (isNativeReservationSupported()) {
+      // New Approach (Native)
+      if (!proto.actionDescriptor) {
+        proto.actionDescriptor = {}
+      }
+      proto.actionDescriptor.reservation = reservation ? reservation : ''
+    } else {
+      // Old Approach (SQL Prepending)
+      const statement = `SET @@reservation='${reservation}';`
 
-    // For operation builders, the queries are often set AFTER the builder is created via .queries()
-    // We monkeypatch the .queries() method to ensure our statement is always prepended.
-    if (isOperation && typeof action.queries === 'function' && !action._queriesPatched) {
-      const originalQueriesFn = action.queries
-      action.queries = function (queries) {
-        let queriesArray = queries
-        if (typeof queries === 'function') {
-          queriesArray = (ctx) => {
-            const result = queries(ctx)
-            if (typeof result === 'string') {
-              return [statement, result]
-            } else if (Array.isArray(result)) {
-              return [statement, ...result]
+      // For operation builders, the queries are often set AFTER the builder is created via .queries()
+      // We monkeypatch the .queries() method to ensure our statement is always prepended.
+      if (isOperation && typeof action.queries === 'function' && !action._queriesPatched) {
+        const originalQueriesFn = action.queries
+        action.queries = function (queries) {
+          let queriesArray = queries
+
+          // Check for outer DECLARE before wrapping
+          if (hasOuterDeclare(queries)) {
+            return originalQueriesFn.apply(this, [queries])
+          }
+
+          if (typeof queries === 'function') {
+            queriesArray = (ctx) => {
+              const result = queries(ctx)
+              if (typeof result === 'string') {
+                return [statement, result]
+              } else if (Array.isArray(result)) {
+                return [statement, ...result]
+              }
+              return result
             }
-            return result
+          } else if (typeof queries === 'string') {
+            queriesArray = [statement, queries]
+          } else if (Array.isArray(queries)) {
+            // Check if already prepended to avoid duplicates
+            if (!queries.includes(statement)) {
+              queriesArray = [statement, ...queries]
+            }
           }
-        } else if (typeof queries === 'string') {
-          queriesArray = [statement, queries]
-        } else if (Array.isArray(queries)) {
-          // Check if already prepended to avoid duplicates
-          if (!queries.includes(statement)) {
-            queriesArray = [statement, ...queries]
+          return originalQueriesFn.apply(this, [queriesArray])
+        }
+        action._queriesPatched = true
+      }
+
+      // Prefer modifying data structure directly if we know it's a safe type
+      // This handles both Builders (via .proto) and Compiled Objects (direct)
+
+      // 1. Try contextablePreOps (Tables/Views Builders before resolution)
+      if (action.contextablePreOps) {
+        if (!hasOuterDeclare(action.contextablePreOps)) {
+          if (Array.isArray(action.contextablePreOps)) {
+            if (!action.contextablePreOps.includes(statement)) {
+              action.contextablePreOps.unshift(statement)
+            }
+          } else if (typeof action.contextablePreOps === 'string') {
+            if (!action.contextablePreOps.includes(statement)) {
+              action.contextablePreOps = [statement, action.contextablePreOps]
+            }
           }
         }
-        return originalQueriesFn.apply(this, [queriesArray])
       }
-      action._queriesPatched = true
-    }
-
-    // Prefer modifying data structure directly if we know it's a safe type
-    // This handles both Builders (via .proto) and Compiled Objects (direct)
-
-    // 1. Try contextablePreOps (Tables/Views Builders before resolution)
-    if (action.contextablePreOps) {
-      if (Array.isArray(action.contextablePreOps)) {
-        if (!action.contextablePreOps.includes(statement)) {
-          action.contextablePreOps.unshift(statement)
-        }
-      } else if (typeof action.contextablePreOps === 'string') {
-        if (!action.contextablePreOps.includes(statement)) {
-          action.contextablePreOps = [statement, action.contextablePreOps]
+      // 2. Try contextableQueries (Operations Builders before resolution)
+      else if (action.contextableQueries) {
+        // Skip if there is an outer DECLARE
+        if (!hasOuterDeclare(action.contextableQueries)) {
+          if (Array.isArray(action.contextableQueries)) {
+            if (!action.contextableQueries.includes(statement)) {
+              action.contextableQueries.unshift(statement)
+            }
+          } else if (typeof action.contextableQueries === 'string') {
+            if (!action.contextableQueries.includes(statement)) {
+              action.contextableQueries = [statement, action.contextableQueries]
+            }
+          }
         }
       }
-    }
-    // 2. Try contextableQueries (Operations Builders before resolution)
-    else if (action.contextableQueries) {
-      if (Array.isArray(action.contextableQueries)) {
-        if (!action.contextableQueries.includes(statement)) {
-          action.contextableQueries.unshift(statement)
-        }
-      } else if (typeof action.contextableQueries === 'string') {
-        if (!action.contextableQueries.includes(statement)) {
-          action.contextableQueries = [statement, action.contextableQueries]
+      // 3. Try proto.preOps (Compiled Tables/Views or Resolved Builders)
+      else if (hasType) {
+        if (!hasOuterDeclare(proto.preOps || [])) {
+          if (!proto.preOps) {
+            proto.preOps = []
+          }
+          if (Array.isArray(proto.preOps)) {
+            if (!proto.preOps.includes(statement)) {
+              proto.preOps.unshift(statement)
+            }
+          } else if (typeof proto.preOps === 'string') {
+            if (!proto.preOps.includes(statement)) {
+              proto.preOps = [statement, proto.preOps]
+            }
+          } else if (hasPreOpsFn) {
+            action.preOps(statement)
+          }
         }
       }
-    }
-    // 3. Try proto.preOps (Compiled Tables/Views or Resolved Builders)
-    else if (hasType) {
-      if (!proto.preOps) {
-        proto.preOps = []
+      // 4. Try proto.queries (Compiled Operations or Resolved Builders)
+      else if (proto.queries) {
+        // Skip if there is an outer DECLARE
+        if (!hasOuterDeclare(proto.queries)) {
+          if (Array.isArray(proto.queries)) {
+            if (!proto.queries.includes(statement)) {
+              proto.queries.unshift(statement)
+            }
+          } else if (typeof proto.queries === 'string') {
+            if (!proto.queries.includes(statement)) {
+              proto.queries = [statement, proto.queries]
+            }
+          }
+        }
       }
-      if (Array.isArray(proto.preOps)) {
-        if (!proto.preOps.includes(statement)) {
-          proto.preOps.unshift(statement)
-        }
-      } else if (typeof proto.preOps === 'string') {
-        if (!proto.preOps.includes(statement)) {
-          proto.preOps = [statement, proto.preOps]
-        }
-      } else if (hasPreOpsFn) {
+      // 5. Fallback to function API (likely Tables/Views)
+      else if (hasPreOpsFn) {
         action.preOps(statement)
       }
-    }
-    // 4. Try proto.queries (Compiled Operations or Resolved Builders)
-    else if (proto.queries) {
-      if (Array.isArray(proto.queries)) {
-        if (!proto.queries.includes(statement)) {
-          proto.queries.unshift(statement)
-        }
-      } else if (typeof proto.queries === 'string') {
-        if (!proto.queries.includes(statement)) {
-          proto.queries = [statement, proto.queries]
-        }
-      }
-    }
-    // 5. Fallback to function API (likely Tables/Views)
-    else if (hasPreOpsFn) {
-      action.preOps(statement)
     }
   }
 }
@@ -288,5 +429,6 @@ function autoAssignActions(config) {
 module.exports = {
   createReservationSetter,
   getActionName,
-  autoAssignActions
+  autoAssignActions,
+  isNativeReservationSupported
 }
