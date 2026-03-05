@@ -273,5 +273,8 @@ function autoAssignActions(config) {
 module.exports = {
   createReservationSetter,
   getActionName,
-  autoAssignActions
+  autoAssignActions,
+  prependStatement,
+  isArrayOrString,
+  findReservation
 }
