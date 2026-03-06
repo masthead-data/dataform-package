@@ -24,27 +24,21 @@ function getActionName(ctx) {
 /**
  * Finds the matching reservation for an action name
  * @param {string} actionName - The action name to look up
- * @param {Array} configSets - Preprocessed configuration with Sets
+ * @param {Map} actionToReservation - Preprocessed configuration Map (actionName -> reservation)
  * @returns {string|null} The reservation identifier or null
  */
-function findReservation(actionName, configSets) {
+function findReservation(actionName, actionToReservation) {
   if (!actionName || typeof actionName !== 'string') {
     return null
   }
 
-  for (const config of configSets) {
-    if (config.actionSet.has(actionName)) {
-      return config.reservation
-    }
-  }
-
-  return null
+  return actionToReservation.get(actionName) ?? null
 }
 
 /**
  * Validates and preprocesses the configuration array
  * @param {Array} config - Raw configuration array
- * @returns {Array} Preprocessed configuration with Sets
+ * @returns {Object} Preprocessed configuration containing both Map and original structure
  */
 function preprocessConfig(config) {
   if (!config || !Array.isArray(config)) {
@@ -55,7 +49,8 @@ function preprocessConfig(config) {
     throw new Error('Configuration array cannot be empty')
   }
 
-  return config.map((item, index) => {
+  const actionToReservation = new Map()
+  const configSets = config.map((item, index) => {
     if (!item || typeof item !== 'object') {
       throw new Error(`Configuration item at index ${index} must be an object`)
     }
@@ -68,13 +63,27 @@ function preprocessConfig(config) {
       throw new Error(`Configuration item at index ${index} must have 'actions' as an array`)
     }
 
-    return {
+    const configItem = {
       tag: item.tag,
       reservation: item.reservation,
       actions: item.actions,
       actionSet: new Set(item.actions)
     }
+
+    // Populate Map while preserving "first match wins" behavior
+    configItem.actions.forEach(actionName => {
+      if (!actionToReservation.has(actionName)) {
+        actionToReservation.set(actionName, item.reservation)
+      }
+    })
+
+    return configItem
   })
+
+  return {
+    actionToReservation,
+    configSets
+  }
 }
 
 /**
@@ -211,9 +220,9 @@ function isArrayOrString(val) {
 /**
  * Helper to apply reservation to a single action
  * @param {Object} action - Dataform action object
- * @param {Array} configSets - Preprocessed configuration
+ * @param {Map} actionToReservation - Preprocessed configuration Map
  */
-function applyReservationToAction(action, configSets) {
+function applyReservationToAction(action, actionToReservation) {
   // 1. Identify where the data lives
   // If no .proto, assume action itself is the data container (compiled object)
   const proto = action.proto || action
@@ -239,7 +248,7 @@ function applyReservationToAction(action, configSets) {
   }
 
   // 3. Apply Reservation
-  const reservation = findReservation(actionName, configSets)
+  const reservation = findReservation(actionName, actionToReservation)
   if (reservation) {
     if (isNativeReservationSupported()) {
       // New Approach (Native)
@@ -318,12 +327,12 @@ function applyReservationToAction(action, configSets) {
  * @param {Array} config - Array of reservation configuration objects
  */
 function autoAssignActions(config) {
-  const preprocessedConfig = preprocessConfig(config)
+  const { actionToReservation } = preprocessConfig(config)
 
   // 1. Process existing actions (in case this is called late)
   if (global.dataform && global.dataform.actions) {
     global.dataform.actions.forEach(action => {
-      applyReservationToAction(action, preprocessedConfig)
+      applyReservationToAction(action, actionToReservation)
     })
   }
 
@@ -339,7 +348,7 @@ function autoAssignActions(config) {
         // The action should be the last one added to the session
         if (global.dataform && global.dataform.actions && global.dataform.actions.length > 0) {
           const lastAction = global.dataform.actions[global.dataform.actions.length - 1]
-          applyReservationToAction(lastAction, preprocessedConfig)
+          applyReservationToAction(lastAction, actionToReservation)
         }
 
         return actionBuilder
@@ -355,7 +364,7 @@ function autoAssignActions(config) {
 
       if (global.dataform && global.dataform.actions && global.dataform.actions.length > 0) {
         const lastAction = global.dataform.actions[global.dataform.actions.length - 1]
-        applyReservationToAction(lastAction, preprocessedConfig)
+        applyReservationToAction(lastAction, actionToReservation)
       }
       return result
     }

@@ -831,46 +831,44 @@ describe('Dataform package', () => {
   describe('findReservation', () => {
     test('should find reservation for matching action', () => {
       const { findReservation } = require('../index')
-      const configSets = [{
-        actionSet: new Set(['prod.dataset.table']),
-        reservation: 'projects/test/reservations/prod'
-      }]
-      const result = findReservation('prod.dataset.table', configSets)
+      const actionToReservation = new Map([
+        ['prod.dataset.table', 'projects/test/reservations/prod']
+      ])
+      const result = findReservation('prod.dataset.table', actionToReservation)
       expect(result).toBe('projects/test/reservations/prod')
     })
 
     test('should return null for non-matching action', () => {
       const { findReservation } = require('../index')
-      const configSets = [{
-        actionSet: new Set(['prod.dataset.table']),
-        reservation: 'projects/test/reservations/prod'
-      }]
-      const result = findReservation('unknown.dataset.table', configSets)
+      const actionToReservation = new Map([
+        ['prod.dataset.table', 'projects/test/reservations/prod']
+      ])
+      const result = findReservation('unknown.dataset.table', actionToReservation)
       expect(result).toBeNull()
     })
 
     test('should handle multiple config sets', () => {
       const { findReservation } = require('../index')
-      const configSets = [
-        { actionSet: new Set(['prod.dataset.table']), reservation: 'prod-res' },
-        { actionSet: new Set(['dev.dataset.table']), reservation: 'dev-res' }
-      ]
-      expect(findReservation('prod.dataset.table', configSets)).toBe('prod-res')
-      expect(findReservation('dev.dataset.table', configSets)).toBe('dev-res')
+      const actionToReservation = new Map([
+        ['prod.dataset.table', 'prod-res'],
+        ['dev.dataset.table', 'dev-res']
+      ])
+      expect(findReservation('prod.dataset.table', actionToReservation)).toBe('prod-res')
+      expect(findReservation('dev.dataset.table', actionToReservation)).toBe('dev-res')
     })
 
     test('should return null for null/undefined action name', () => {
       const { findReservation } = require('../index')
-      const configSets = [{ actionSet: new Set(['test']), reservation: 'res' }]
-      expect(findReservation(null, configSets)).toBeNull()
-      expect(findReservation(undefined, configSets)).toBeNull()
+      const actionToReservation = new Map([['test', 'res']])
+      expect(findReservation(null, actionToReservation)).toBeNull()
+      expect(findReservation(undefined, actionToReservation)).toBeNull()
     })
 
     test('should return null for non-string action name', () => {
       const { findReservation } = require('../index')
-      const configSets = [{ actionSet: new Set(['test']), reservation: 'res' }]
-      expect(findReservation(123, configSets)).toBeNull()
-      expect(findReservation({}, configSets)).toBeNull()
+      const actionToReservation = new Map([['test', 'res']])
+      expect(findReservation(123, actionToReservation)).toBeNull()
+      expect(findReservation({}, actionToReservation)).toBeNull()
     })
   })
 })
