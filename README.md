@@ -1,6 +1,6 @@
 # Masthead Package for Dataform
 
-![NPM Version](https://img.shields.io/npm/v/%40masthead-data%2Fdataform-package)
+[![NPM Version](https://img.shields.io/npm/v/%40masthead-data%2Fdataform-package)](https://www.npmjs.com/package/@masthead-data/dataform-package)
 
 ## Overview
 
