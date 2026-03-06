@@ -191,7 +191,38 @@ describe('Compiled Objects and Edge Cases', () => {
     expect(action.contextablePreOps[0]).toBe('SET @@reservation=\'projects/test/locations/US/reservations/prod\';')
   })
 
-  test('should handle monkeypatched queries with function returning string', () => {
+  test.each([
+    {
+      name: 'function returning string',
+      input: () => 'SELECT 1',
+      validator: (result) => {
+        expect(result).toContain('SET @@reservation=\'projects/test/locations/US/reservations/prod\';')
+        expect(result).toContain('SELECT 1')
+      }
+    },
+    {
+      name: 'function returning array',
+      input: () => ['SELECT 1', 'SELECT 2'],
+      validator: (result) => {
+        expect(result[0]).toBe('SET @@reservation=\'projects/test/locations/US/reservations/prod\';')
+        expect(result).toHaveLength(3)
+      }
+    },
+    {
+      name: 'function returning other types',
+      input: () => null,
+      validator: (result) => {
+        expect(result).toBe(null)
+      }
+    },
+    {
+      name: 'array',
+      input: ['SELECT 1'],
+      validator: (result) => {
+        expect(result[0]).toBe('SET @@reservation=\'projects/test/locations/US/reservations/prod\';')
+      }
+    }
+  ])('should handle monkeypatched queries with $name', ({ input, validator }) => {
     const action = {
       queries: function(q) { this.resolvedQueries = q; return this },
       proto: {
@@ -203,74 +234,22 @@ describe('Compiled Objects and Edge Cases', () => {
 
     autoAssignActions(config)
 
-    // Trigger the monkeypatched queries function
-    const queryFn = () => 'SELECT 1'
-    action.queries(queryFn)
+    action.queries(input)
 
-    // The monkeypatch should have wrapped the function
-    const wrappedFn = action.resolvedQueries
-    expect(typeof wrappedFn).toBe('function')
-
-    const result = wrappedFn({})
-    expect(result).toContain('SET @@reservation=\'projects/test/locations/US/reservations/prod\';')
-    expect(result).toContain('SELECT 1')
-  })
-
-  test('should handle monkeypatched queries with function returning array', () => {
-    const action = {
-      queries: function(q) { this.resolvedQueries = q; return this },
-      proto: {
-        queries: [],
-        target: { database: 'test-project', schema: 'test-schema', name: 'target_action' }
-      }
+    // For arrays, `action.queries()` directly assigns resolvedQueries if not wrapped,
+    // but the monkeypatch will wrap them. We extract the resolved value for validation.
+    // If input is an array, it's wrapped and immediately modifies `resolvedQueries` via the original function.
+    // Our action mock just sets `this.resolvedQueries = q`.
+    // So if the patched function returns, it calls the original function.
+    // Let's resolve what to test:
+    if (typeof input === 'function') {
+      const wrappedFn = action.resolvedQueries
+      expect(typeof wrappedFn).toBe('function')
+      const result = wrappedFn({})
+      validator(result)
+    } else {
+      validator(action.resolvedQueries)
     }
-    global.dataform.actions.push(action)
-
-    autoAssignActions(config)
-
-    const queryFn = () => ['SELECT 1', 'SELECT 2']
-    action.queries(queryFn)
-
-    const wrappedFn = action.resolvedQueries
-    const result = wrappedFn({})
-    expect(result[0]).toBe('SET @@reservation=\'projects/test/locations/US/reservations/prod\';')
-    expect(result).toHaveLength(3)
-  })
-
-  test('should handle monkeypatched queries with function returning other types', () => {
-    const action = {
-      queries: function(q) { this.resolvedQueries = q; return this },
-      proto: {
-        queries: [],
-        target: { database: 'test-project', schema: 'test-schema', name: 'target_action' }
-      }
-    }
-    global.dataform.actions.push(action)
-
-    autoAssignActions(config)
-
-    const queryFn = () => null
-    action.queries(queryFn)
-
-    const wrappedFn = action.resolvedQueries
-    const result = wrappedFn({})
-    expect(result).toBe(null)
-  })
-
-  test('should handle monkeypatched queries with array', () => {
-    const action = {
-      queries: function(q) { this.resolvedQueries = q; return this },
-      proto: {
-        queries: [],
-        target: { database: 'test-project', schema: 'test-schema', name: 'target_action' }
-      }
-    }
-    global.dataform.actions.push(action)
-
-    autoAssignActions(config)
-
-    action.queries(['SELECT 1'])
-    expect(action.resolvedQueries[0]).toBe('SET @@reservation=\'projects/test/locations/US/reservations/prod\';')
   })
 
   test('should intercept sqlxAction', () => {
