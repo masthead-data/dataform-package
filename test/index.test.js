@@ -4,30 +4,48 @@ const {
   autoAssignActions
 } = require('../index')
 
-// Example configuration for testing (previously hardcoded in the package)
+/**
+ * TEST NAMING GUIDELINE
+ *
+ * Use descriptive semantic names highlighting environment and purpose:
+ * - Environment prefix: prod, dev, staging (reflects the business context)
+ * - Dataset: public_analytics, data_mart, assertions, staging (describes domain)
+ * - Table/action: pages, requests, quality_check (specific dataset contents)
+ *
+ * Format: {environment}.{dataset}.{table}
+ * Example: prod.public_analytics.pages, prod.data_mart.requests_latest
+ *
+ * Benefits: Tests are self-documenting, easier to extend, and reflect real-world patterns.
+ */
+
+// Example configuration for testing
+// Naming guideline: Use descriptive semantic names reflecting environment/purpose
+// - Environment prefix: prod, dev, staging
+// - Dataset describes the business domain: public_analytics, data_mart, assertions, staging
+// - Table/action names describe the dataset contents: pages, requests, quality_check, temp_dataset
 const EXAMPLE_RESERVATION_CONFIG = [
   {
-    tag: 'high_slots',
-    reservation: 'projects/httparchive/locations/US/reservations/pipeline',
+    tag: 'prod_reserved',
+    reservation: 'projects/my-project/locations/us/reservations/prod',
     actions: [
-      'httparchive.crawl.pages',
-      'httparchive.crawl.requests',
-      'httparchive.crawl.parsed_css',
-      'httparchive.f1.pages_latest',
-      'httparchive.f1.requests_latest'
+      'prod.public_analytics.pages',
+      'prod.public_analytics.requests',
+      'prod.public_analytics.parsed_css',
+      'prod.data_mart.pages_latest',
+      'prod.data_mart.requests_latest'
     ]
   },
   {
-    tag: 'low_slots',
+    tag: 'dev_reserved',
     reservation: null,
     actions: []
   },
   {
-    tag: 'on_demand',
+    tag: 'ondemand_pricing',
     reservation: 'none',
     actions: [
-      'httparchive.dataform_assertions.corrupted_technology_values',
-      'httparchive.scratchspace.new'
+      'prod.assertions.data_quality_check',
+      'prod.staging.temp_dataset'
     ]
   }
 ]
@@ -37,16 +55,16 @@ describe('Dataform package', () => {
   const reservation_setter = createReservationSetter(EXAMPLE_RESERVATION_CONFIG)
 
   describe('reservation setter function (from createReservationSetter)', () => {
-    test('should return reservation SQL for high_slots action', () => {
+    test('should return reservation SQL for prod_reserved action', () => {
       const ctx = {
-        self: () => 'httparchive.crawl.pages'
+        self: () => 'prod.public_analytics.pages'
       }
 
       const result = reservation_setter(ctx)
-      expect(result).toBe('SET @@reservation=\'projects/httparchive/locations/US/reservations/pipeline\';')
+      expect(result).toBe('SET @@reservation=\'projects/my-project/locations/us/reservations/prod\';')
     })
 
-    test('should return empty string for low_slots action', () => {
+    test('should return empty string for dev_reserved action', () => {
       const ctx = {
         self: () => 'some.unknown.action'
       }
@@ -55,9 +73,9 @@ describe('Dataform package', () => {
       expect(result).toBe('')
     })
 
-    test('should return none reservation for on_demand action', () => {
+    test('should return none reservation for ondemand_pricing action', () => {
       const ctx = {
-        self: () => 'httparchive.dataform_assertions.corrupted_technology_values'
+        self: () => 'prod.assertions.data_quality_check'
       }
 
       const result = reservation_setter(ctx)
@@ -69,8 +87,8 @@ describe('Dataform package', () => {
         operation: {
           proto: {
             target: {
-              database: 'httparchive',
-              schema: 'crawl',
+              database: 'prod',
+              schema: 'public_analytics',
               name: 'requests'
             }
           }
@@ -78,7 +96,7 @@ describe('Dataform package', () => {
       }
 
       const result = reservation_setter(ctx)
-      expect(result).toBe('SET @@reservation=\'projects/httparchive/locations/US/reservations/pipeline\';')
+      expect(result).toBe('SET @@reservation=\'projects/my-project/locations/us/reservations/prod\';')
     })
 
     test('should throw error when invalid config is provided to createReservationSetter', () => {
@@ -125,11 +143,11 @@ describe('Dataform package', () => {
 
     test('should strip backticks from action name', () => {
       const ctx = {
-        self: () => '`httparchive.crawl.pages`'
+        self: () => '`prod.public_analytics.pages`'
       }
 
       const result = reservation_setter(ctx)
-      expect(result).toBe('SET @@reservation=\'projects/httparchive/locations/US/reservations/pipeline\';')
+      expect(result).toBe('SET @@reservation=\'projects/my-project/locations/us/reservations/prod\';')
     })
 
     test('should handle malformed proto target', () => {
@@ -487,6 +505,112 @@ describe('Dataform package', () => {
         op.includes('SET @@reservation')
       ).length
       expect(reservationCount).toBe(1)
+    })
+  })
+
+  describe('prependStatement', () => {
+    test('should prepend statement to array', () => {
+      const { prependStatement } = require('../index')
+      const result = prependStatement(['query2'], 'query1')
+      expect(result).toEqual(['query1', 'query2'])
+    })
+
+    test('should not duplicate statement in array', () => {
+      const { prependStatement } = require('../index')
+      const result = prependStatement(['query1', 'query2'], 'query1')
+      expect(result).toEqual(['query1', 'query2'])
+    })
+
+    test('should prepend statement to string', () => {
+      const { prependStatement } = require('../index')
+      const result = prependStatement('SELECT * FROM table', 'SET @var=1;')
+      expect(result).toEqual(['SET @var=1;', 'SELECT * FROM table'])
+    })
+
+    test('should not duplicate statement in string', () => {
+      const { prependStatement } = require('../index')
+      const duplicate = 'SET @var=1;\nSELECT * FROM table'
+      const result = prependStatement(duplicate, 'SET @var=1;')
+      expect(result).toBe(duplicate)
+    })
+
+    test('should handle empty array', () => {
+      const { prependStatement } = require('../index')
+      const result = prependStatement([], 'statement')
+      expect(result).toEqual(['statement'])
+    })
+
+    test('should handle empty string', () => {
+      const { prependStatement } = require('../index')
+      const result = prependStatement('', 'statement')
+      expect(result).toEqual(['statement', ''])
+    })
+  })
+
+  describe('isArrayOrString', () => {
+    test('should return true for array', () => {
+      const { isArrayOrString } = require('../index')
+      expect(isArrayOrString([])).toBe(true)
+      expect(isArrayOrString(['item'])).toBe(true)
+    })
+
+    test('should return true for string', () => {
+      const { isArrayOrString } = require('../index')
+      expect(isArrayOrString('')).toBe(true)
+      expect(isArrayOrString('test')).toBe(true)
+    })
+
+    test('should return false for other types', () => {
+      const { isArrayOrString } = require('../index')
+      expect(isArrayOrString(null)).toBe(false)
+      expect(isArrayOrString(undefined)).toBe(false)
+      expect(isArrayOrString(123)).toBe(false)
+      expect(isArrayOrString({})).toBe(false)
+      expect(isArrayOrString(() => {})).toBe(false)
+    })
+  })
+
+  describe('findReservation', () => {
+    test('should find reservation for matching action', () => {
+      const { findReservation } = require('../index')
+      const actionToReservation = new Map([
+        ['prod.dataset.table', 'projects/test/reservations/prod']
+      ])
+      const result = findReservation('prod.dataset.table', actionToReservation)
+      expect(result).toBe('projects/test/reservations/prod')
+    })
+
+    test('should return null for non-matching action', () => {
+      const { findReservation } = require('../index')
+      const actionToReservation = new Map([
+        ['prod.dataset.table', 'projects/test/reservations/prod']
+      ])
+      const result = findReservation('unknown.dataset.table', actionToReservation)
+      expect(result).toBeNull()
+    })
+
+    test('should handle multiple config sets', () => {
+      const { findReservation } = require('../index')
+      const actionToReservation = new Map([
+        ['prod.dataset.table', 'prod-res'],
+        ['dev.dataset.table', 'dev-res']
+      ])
+      expect(findReservation('prod.dataset.table', actionToReservation)).toBe('prod-res')
+      expect(findReservation('dev.dataset.table', actionToReservation)).toBe('dev-res')
+    })
+
+    test('should return null for null/undefined action name', () => {
+      const { findReservation } = require('../index')
+      const actionToReservation = new Map([['test', 'res']])
+      expect(findReservation(null, actionToReservation)).toBeNull()
+      expect(findReservation(undefined, actionToReservation)).toBeNull()
+    })
+
+    test('should return null for non-string action name', () => {
+      const { findReservation } = require('../index')
+      const actionToReservation = new Map([['test', 'res']])
+      expect(findReservation(123, actionToReservation)).toBeNull()
+      expect(findReservation({}, actionToReservation)).toBeNull()
     })
   })
 })

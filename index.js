@@ -24,27 +24,21 @@ function getActionName(ctx) {
 /**
  * Finds the matching reservation for an action name
  * @param {string} actionName - The action name to look up
- * @param {Array} configSets - Preprocessed configuration with Sets
+ * @param {Map} actionToReservation - Preprocessed configuration Map (actionName -> reservation)
  * @returns {string|null} The reservation identifier or null
  */
-function findReservation(actionName, configSets) {
+function findReservation(actionName, actionToReservation) {
   if (!actionName || typeof actionName !== 'string') {
     return null
   }
 
-  for (const config of configSets) {
-    if (config.actionSet.has(actionName)) {
-      return config.reservation
-    }
-  }
-
-  return null
+  return actionToReservation.get(actionName) ?? null
 }
 
 /**
  * Validates and preprocesses the configuration array
  * @param {Array} config - Raw configuration array
- * @returns {Array} Preprocessed configuration with Sets
+ * @returns {Object} Preprocessed configuration containing both Map and original structure
  */
 function preprocessConfig(config) {
   if (!config || !Array.isArray(config)) {
@@ -55,7 +49,8 @@ function preprocessConfig(config) {
     throw new Error('Configuration array cannot be empty')
   }
 
-  return config.map((item, index) => {
+  const actionToReservation = new Map()
+  const configSets = config.map((item, index) => {
     if (!item || typeof item !== 'object') {
       throw new Error(`Configuration item at index ${index} must be an object`)
     }
@@ -68,13 +63,27 @@ function preprocessConfig(config) {
       throw new Error(`Configuration item at index ${index} must have 'actions' as an array`)
     }
 
-    return {
+    const configItem = {
       tag: item.tag,
       reservation: item.reservation,
       actions: item.actions,
       actionSet: new Set(item.actions)
     }
+
+    // Populate Map while preserving "first match wins" behavior
+    configItem.actions.forEach(actionName => {
+      if (!actionToReservation.has(actionName)) {
+        actionToReservation.set(actionName, item.reservation)
+      }
+    })
+
+    return configItem
   })
+
+  return {
+    actionToReservation,
+    configSets
+  }
 }
 
 /**
@@ -98,21 +107,51 @@ function preprocessConfig(config) {
  * // ${reservationSetter(ctx)}
  */
 function createReservationSetter(config) {
-  const preprocessedConfig = preprocessConfig(config)
+  const { actionToReservation } = preprocessConfig(config)
 
   return function reservationSetter(ctx) {
     const actionName = getActionName(ctx)
-    const reservation = findReservation(actionName, preprocessedConfig)
+    const reservation = findReservation(actionName, actionToReservation)
     return reservation ? `SET @@reservation='${reservation}';` : ''
   }
 }
 
 /**
+ * Ensures a statement is prepended to an array or string
+ * @param {Array|string} target - The target to prepend to
+ * @param {string} statement - The statement to prepend
+ * @returns {Array|string} The modified target
+ */
+function prependStatement(target, statement) {
+  if (Array.isArray(target)) {
+    if (!target.includes(statement)) {
+      return [statement, ...target]
+    }
+    return target
+  }
+  if (typeof target === 'string') {
+    if (!target.includes(statement)) {
+      return [statement, target]
+    }
+  }
+  return target
+}
+
+/**
+ * Checks if a value is an array or string
+ * @param {any} val - The value to check
+ * @returns {boolean} True if array or string
+ */
+function isArrayOrString(val) {
+  return Array.isArray(val) || typeof val === 'string'
+}
+
+/**
  * Helper to apply reservation to a single action
  * @param {Object} action - Dataform action object
- * @param {Array} configSets - Preprocessed configuration
+ * @param {Map} actionToReservation - Preprocessed configuration Map
  */
-function applyReservationToAction(action, configSets) {
+function applyReservationToAction(action, actionToReservation) {
   // 1. Identify where the data lives
   // If no .proto, assume action itself is the data container (compiled object)
   const proto = action.proto || action
@@ -138,7 +177,7 @@ function applyReservationToAction(action, configSets) {
   }
 
   // 3. Apply Reservation
-  const reservation = findReservation(actionName, configSets)
+  const reservation = findReservation(actionName, actionToReservation)
   if (reservation) {
     const statement = reservation === 'none'
       ? 'SET @@reservation=\'none\';'
@@ -149,25 +188,9 @@ function applyReservationToAction(action, configSets) {
     if (isOperation && typeof action.queries === 'function' && !action._queriesPatched) {
       const originalQueriesFn = action.queries
       action.queries = function (queries) {
-        let queriesArray = queries
-        if (typeof queries === 'function') {
-          queriesArray = (ctx) => {
-            const result = queries(ctx)
-            if (typeof result === 'string') {
-              return [statement, result]
-            } else if (Array.isArray(result)) {
-              return [statement, ...result]
-            }
-            return result
-          }
-        } else if (typeof queries === 'string') {
-          queriesArray = [statement, queries]
-        } else if (Array.isArray(queries)) {
-          // Check if already prepended to avoid duplicates
-          if (!queries.includes(statement)) {
-            queriesArray = [statement, ...queries]
-          }
-        }
+        const queriesArray = typeof queries === 'function'
+          ? (ctx) => prependStatement(queries(ctx), statement)
+          : prependStatement(queries, statement)
         return originalQueriesFn.apply(this, [queriesArray])
       }
       action._queriesPatched = true
@@ -178,56 +201,27 @@ function applyReservationToAction(action, configSets) {
 
     // 1. Try contextablePreOps (Tables/Views Builders before resolution)
     if (action.contextablePreOps) {
-      if (Array.isArray(action.contextablePreOps)) {
-        if (!action.contextablePreOps.includes(statement)) {
-          action.contextablePreOps.unshift(statement)
-        }
-      } else if (typeof action.contextablePreOps === 'string') {
-        if (!action.contextablePreOps.includes(statement)) {
-          action.contextablePreOps = [statement, action.contextablePreOps]
-        }
-      }
+      action.contextablePreOps = prependStatement(action.contextablePreOps, statement)
     }
     // 2. Try contextableQueries (Operations Builders before resolution)
     else if (action.contextableQueries) {
-      if (Array.isArray(action.contextableQueries)) {
-        if (!action.contextableQueries.includes(statement)) {
-          action.contextableQueries.unshift(statement)
-        }
-      } else if (typeof action.contextableQueries === 'string') {
-        if (!action.contextableQueries.includes(statement)) {
-          action.contextableQueries = [statement, action.contextableQueries]
-        }
-      }
+      action.contextableQueries = prependStatement(action.contextableQueries, statement)
     }
     // 3. Try proto.preOps (Compiled Tables/Views or Resolved Builders)
     else if (hasType) {
       if (!proto.preOps) {
         proto.preOps = []
       }
-      if (Array.isArray(proto.preOps)) {
-        if (!proto.preOps.includes(statement)) {
-          proto.preOps.unshift(statement)
-        }
-      } else if (typeof proto.preOps === 'string') {
-        if (!proto.preOps.includes(statement)) {
-          proto.preOps = [statement, proto.preOps]
-        }
+
+      if (isArrayOrString(proto.preOps)) {
+        proto.preOps = prependStatement(proto.preOps, statement)
       } else if (hasPreOpsFn) {
         action.preOps(statement)
       }
     }
     // 4. Try proto.queries (Compiled Operations or Resolved Builders)
     else if (proto.queries) {
-      if (Array.isArray(proto.queries)) {
-        if (!proto.queries.includes(statement)) {
-          proto.queries.unshift(statement)
-        }
-      } else if (typeof proto.queries === 'string') {
-        if (!proto.queries.includes(statement)) {
-          proto.queries = [statement, proto.queries]
-        }
-      }
+      proto.queries = prependStatement(proto.queries, statement)
     }
     // 5. Fallback to function API (likely Tables/Views)
     else if (hasPreOpsFn) {
@@ -241,12 +235,12 @@ function applyReservationToAction(action, configSets) {
  * @param {Array} config - Array of reservation configuration objects
  */
 function autoAssignActions(config) {
-  const preprocessedConfig = preprocessConfig(config)
+  const { actionToReservation } = preprocessConfig(config)
 
   // 1. Process existing actions (in case this is called late)
   if (global.dataform && global.dataform.actions) {
     global.dataform.actions.forEach(action => {
-      applyReservationToAction(action, preprocessedConfig)
+      applyReservationToAction(action, actionToReservation)
     })
   }
 
@@ -262,7 +256,7 @@ function autoAssignActions(config) {
         // The action should be the last one added to the session
         if (global.dataform && global.dataform.actions && global.dataform.actions.length > 0) {
           const lastAction = global.dataform.actions[global.dataform.actions.length - 1]
-          applyReservationToAction(lastAction, preprocessedConfig)
+          applyReservationToAction(lastAction, actionToReservation)
         }
 
         return actionBuilder
@@ -278,7 +272,7 @@ function autoAssignActions(config) {
 
       if (global.dataform && global.dataform.actions && global.dataform.actions.length > 0) {
         const lastAction = global.dataform.actions[global.dataform.actions.length - 1]
-        applyReservationToAction(lastAction, preprocessedConfig)
+        applyReservationToAction(lastAction, actionToReservation)
       }
       return result
     }
@@ -288,5 +282,8 @@ function autoAssignActions(config) {
 module.exports = {
   createReservationSetter,
   getActionName,
-  autoAssignActions
+  autoAssignActions,
+  prependStatement,
+  isArrayOrString,
+  findReservation
 }
