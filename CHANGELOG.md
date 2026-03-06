@@ -21,6 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## [0.2.1] - 2026-03-20
+
+### Changed
+
+- **SQL statement prepending logic refactored**
+- **Reservation lookup performance improved** - Refactored to use a Set for O(1) lookups instead of array iteration, significantly improving performance for large reservation lists
+
 ## [0.2.0] - 2026-01-20
 
 ### Added
