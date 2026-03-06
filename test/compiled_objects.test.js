@@ -44,7 +44,7 @@ describe('Compiled Objects and Edge Cases', () => {
 
     autoAssignActions(config)
 
-    expect(action.preOps).toContain("SET @@reservation='projects/test/locations/US/reservations/prod';")
+    expect(action.preOps).toContain('SET @@reservation=\'projects/test/locations/US/reservations/prod\';')
   })
 
   test('should initialize proto.preOps if it does not exist', () => {
@@ -63,7 +63,7 @@ describe('Compiled Objects and Edge Cases', () => {
 
     expect(action.preOps).toBeDefined()
     expect(Array.isArray(action.preOps)).toBe(true)
-    expect(action.preOps).toContain("SET @@reservation='projects/test/locations/US/reservations/prod';")
+    expect(action.preOps).toContain('SET @@reservation=\'projects/test/locations/US/reservations/prod\';')
   })
 
   test('should handle proto.preOps as a string', () => {
@@ -81,7 +81,7 @@ describe('Compiled Objects and Edge Cases', () => {
     autoAssignActions(config)
 
     expect(Array.isArray(action.preOps)).toBe(true)
-    expect(action.preOps[0]).toBe("SET @@reservation='projects/test/locations/US/reservations/prod';")
+    expect(action.preOps[0]).toBe('SET @@reservation=\'projects/test/locations/US/reservations/prod\';')
     expect(action.preOps[1]).toBe('SELECT 1;')
   })
 
@@ -98,8 +98,8 @@ describe('Compiled Objects and Edge Cases', () => {
 
     autoAssignActions(config)
 
-    expect(action.queries).toContain("SET @@reservation='projects/test/locations/US/reservations/prod';")
-    expect(action.queries[0]).toBe("SET @@reservation='projects/test/locations/US/reservations/prod';")
+    expect(action.queries).toContain('SET @@reservation=\'projects/test/locations/US/reservations/prod\';')
+    expect(action.queries[0]).toBe('SET @@reservation=\'projects/test/locations/US/reservations/prod\';')
   })
 
   test('should handle proto.queries as a string', () => {
@@ -116,7 +116,7 @@ describe('Compiled Objects and Edge Cases', () => {
     autoAssignActions(config)
 
     expect(Array.isArray(action.queries)).toBe(true)
-    expect(action.queries[0]).toBe("SET @@reservation='projects/test/locations/US/reservations/prod';")
+    expect(action.queries[0]).toBe('SET @@reservation=\'projects/test/locations/US/reservations/prod\';')
     expect(action.queries[1]).toBe('SELECT * FROM table')
   })
 
@@ -135,7 +135,7 @@ describe('Compiled Objects and Edge Cases', () => {
 
     autoAssignActions(config)
 
-    expect(preOpsMock).toHaveBeenCalledWith("SET @@reservation='projects/test/locations/US/reservations/prod';")
+    expect(preOpsMock).toHaveBeenCalledWith('SET @@reservation=\'projects/test/locations/US/reservations/prod\';')
   })
 
   test('should fallback to action.preOps() function if no other method matches (Fallback 5)', () => {
@@ -153,7 +153,7 @@ describe('Compiled Objects and Edge Cases', () => {
 
     autoAssignActions(config)
 
-    expect(preOpsMock).toHaveBeenCalledWith("SET @@reservation='projects/test/locations/US/reservations/prod';")
+    expect(preOpsMock).toHaveBeenCalledWith('SET @@reservation=\'projects/test/locations/US/reservations/prod\';')
   })
 
   test('should handle contextableQueries as a string', () => {
@@ -170,7 +170,7 @@ describe('Compiled Objects and Edge Cases', () => {
     autoAssignActions(config)
 
     expect(Array.isArray(action.contextableQueries)).toBe(true)
-    expect(action.contextableQueries[0]).toBe("SET @@reservation='projects/test/locations/US/reservations/prod';")
+    expect(action.contextableQueries[0]).toBe('SET @@reservation=\'projects/test/locations/US/reservations/prod\';')
   })
 
   test('should handle contextablePreOps as a string', () => {
@@ -188,12 +188,12 @@ describe('Compiled Objects and Edge Cases', () => {
     autoAssignActions(config)
 
     expect(Array.isArray(action.contextablePreOps)).toBe(true)
-    expect(action.contextablePreOps[0]).toBe("SET @@reservation='projects/test/locations/US/reservations/prod';")
+    expect(action.contextablePreOps[0]).toBe('SET @@reservation=\'projects/test/locations/US/reservations/prod\';')
   })
 
   test('should handle monkeypatched queries with function returning string', () => {
     const action = {
-      queries: function(q) { this.resolvedQueries = q; return this; },
+      queries: function(q) { this.resolvedQueries = q; return this },
       proto: {
         queries: [],
         target: { database: 'test-project', schema: 'test-schema', name: 'target_action' }
@@ -204,7 +204,7 @@ describe('Compiled Objects and Edge Cases', () => {
     autoAssignActions(config)
 
     // Trigger the monkeypatched queries function
-    const queryFn = (ctx) => 'SELECT 1'
+    const queryFn = () => 'SELECT 1'
     action.queries(queryFn)
 
     // The monkeypatch should have wrapped the function
@@ -212,13 +212,13 @@ describe('Compiled Objects and Edge Cases', () => {
     expect(typeof wrappedFn).toBe('function')
 
     const result = wrappedFn({})
-    expect(result).toContain("SET @@reservation='projects/test/locations/US/reservations/prod';")
+    expect(result).toContain('SET @@reservation=\'projects/test/locations/US/reservations/prod\';')
     expect(result).toContain('SELECT 1')
   })
 
   test('should handle monkeypatched queries with function returning array', () => {
     const action = {
-      queries: function(q) { this.resolvedQueries = q; return this; },
+      queries: function(q) { this.resolvedQueries = q; return this },
       proto: {
         queries: [],
         target: { database: 'test-project', schema: 'test-schema', name: 'target_action' }
@@ -228,18 +228,18 @@ describe('Compiled Objects and Edge Cases', () => {
 
     autoAssignActions(config)
 
-    const queryFn = (ctx) => ['SELECT 1', 'SELECT 2']
+    const queryFn = () => ['SELECT 1', 'SELECT 2']
     action.queries(queryFn)
 
     const wrappedFn = action.resolvedQueries
     const result = wrappedFn({})
-    expect(result[0]).toBe("SET @@reservation='projects/test/locations/US/reservations/prod';")
+    expect(result[0]).toBe('SET @@reservation=\'projects/test/locations/US/reservations/prod\';')
     expect(result).toHaveLength(3)
   })
 
   test('should handle monkeypatched queries with function returning other types', () => {
     const action = {
-      queries: function(q) { this.resolvedQueries = q; return this; },
+      queries: function(q) { this.resolvedQueries = q; return this },
       proto: {
         queries: [],
         target: { database: 'test-project', schema: 'test-schema', name: 'target_action' }
@@ -249,7 +249,7 @@ describe('Compiled Objects and Edge Cases', () => {
 
     autoAssignActions(config)
 
-    const queryFn = (ctx) => null
+    const queryFn = () => null
     action.queries(queryFn)
 
     const wrappedFn = action.resolvedQueries
@@ -259,7 +259,7 @@ describe('Compiled Objects and Edge Cases', () => {
 
   test('should handle monkeypatched queries with array', () => {
     const action = {
-      queries: function(q) { this.resolvedQueries = q; return this; },
+      queries: function(q) { this.resolvedQueries = q; return this },
       proto: {
         queries: [],
         target: { database: 'test-project', schema: 'test-schema', name: 'target_action' }
@@ -270,7 +270,7 @@ describe('Compiled Objects and Edge Cases', () => {
     autoAssignActions(config)
 
     action.queries(['SELECT 1'])
-    expect(action.resolvedQueries[0]).toBe("SET @@reservation='projects/test/locations/US/reservations/prod';")
+    expect(action.resolvedQueries[0]).toBe('SET @@reservation=\'projects/test/locations/US/reservations/prod\';')
   })
 
   test('should intercept sqlxAction', () => {
@@ -288,6 +288,6 @@ describe('Compiled Objects and Edge Cases', () => {
     global.dataform.sqlxAction()
 
     const action = global.dataform.actions[0]
-    expect(action.preOps).toContain("SET @@reservation='projects/test/locations/US/reservations/prod';")
+    expect(action.preOps).toContain('SET @@reservation=\'projects/test/locations/US/reservations/prod\';')
   })
 })
