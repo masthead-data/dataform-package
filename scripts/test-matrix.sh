@@ -5,11 +5,8 @@ set -e
 if [ $# -gt 0 ]; then
   VERSIONS=("$@")
 else
-  VERSIONS=("2.4.2" "3.0.43" "local")
+  VERSIONS=("2.4.2" "3.0.48")
 fi
-
-# Setup local path constant
-DATAFORM_LOCAL_PATH="${DATAFORM_LOCAL_PATH:-/Users/maxostapenko/GitHub/dataform}"
 
 # Cleanup function to restore configuration files
 cleanup() {
@@ -39,7 +36,7 @@ for VERSION in "${VERSIONS[@]}"; do
   echo "========================================="
 
   # Configuration management based on version
-  if [[ $VERSION == 3* || $VERSION == "local" ]]; then
+  if [[ $VERSION == 3* ]]; then
     if [ -f "dataform.json" ]; then
       echo "Hiding dataform.json for v3 compatibility"
       mv dataform.json dataform.json.bak
@@ -55,14 +52,9 @@ for VERSION in "${VERSIONS[@]}"; do
   # echo "Cleaning up previous @dataform installations..."
   # npm uninstall @dataform/cli @dataform/core --no-save > /dev/null 2>&1 || true
 
-  if [[ "$VERSION" == "local" ]]; then
-    echo "Using local Dataform dependency from $DATAFORM_LOCAL_PATH..."
-    npm install "$DATAFORM_LOCAL_PATH/bazel-bin/packages/@dataform/cli/package" "$DATAFORM_LOCAL_PATH/bazel-bin/packages/@dataform/core/package" --no-save
-  else
-    echo "Installing Dataform @$VERSION..."
-    # Use --no-save to avoid cluttering package.json/package-lock.json during matrix tests
-    npm install @dataform/cli@$VERSION @dataform/core@$VERSION --no-save
-  fi
+  echo "Installing Dataform @$VERSION..."
+  # Use --no-save to avoid cluttering package.json/package-lock.json during matrix tests
+  npm install @dataform/cli@$VERSION @dataform/core@$VERSION --no-save
 
   # Run tests using the single version command equivalent but passing the version
   npx @dataform/cli compile --json --vars=DATAFORM_VERSION=$VERSION > compiled.json
