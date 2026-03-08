@@ -131,53 +131,8 @@ function isNativeReservationSupported() {
     return hasNativeReservationSupportCache
   }
 
-  if (global.dataform && global.dataform.projectConfig) {
-    const version = global.dataform.projectConfig.dataformCoreVersion
-    let actualVersion = version
-
-    if (!actualVersion) {
-      try {
-        const path = require('path')
-        const fs = require('fs')
-
-        // When running tests, the dataform framework is actually in test-project/node_modules
-        // require() relative to __dirname will load the parent project's devDependencies, not the exact version we are testing.
-        const localPkg = path.resolve(process.cwd(), 'node_modules/@dataform/core/package.json')
-        if (fs.existsSync(localPkg)) {
-          const content = fs.readFileSync(localPkg, 'utf8')
-          const corePkg = JSON.parse(content)
-          if (corePkg && corePkg.version) {
-            actualVersion = corePkg.version
-          }
-        }
-      } catch {
-        // Ignore if package.json cannot be read
-      }
-    }
-
-    // Fallback: Check for DATAFORM_VERSION in projectConfig.vars
-    if (!actualVersion && global.dataform.projectConfig.vars && global.dataform.projectConfig.vars.DATAFORM_VERSION) {
-      actualVersion = global.dataform.projectConfig.vars.DATAFORM_VERSION
-    }
-
-    if (actualVersion) {
-      // As a simple heuristic for backwards compatibility testing: anything matching 2.* or 3.0.* (up to 43) gets false.
-      if (actualVersion.startsWith('2.') || actualVersion === '3.0.43') {
-        hasNativeReservationSupportCache = false
-        return false
-      }
-    } else {
-      // If version is still unknown, check for v3 specific properties
-      // v3 session has some different properties, but projectConfig exists in both.
-      // If we can't detect version, and it's not v3.0.44+, we might want to default to false
-      // for safety, but typically users of this package will be on v3.
-      // However, for 2.x, we definitely want false.
-      // If we are here, we couldn't find the version.
-    }
-  }
-
-  hasNativeReservationSupportCache = true
-  return true
+  hasNativeReservationSupportCache = false
+  return false
 }
 
 /**
