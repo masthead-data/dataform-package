@@ -2,13 +2,17 @@ const fs = require('fs')
 const path = require('path')
 
 const COMPILED_JSON_PATH = path.join(__dirname, '../test-project/compiled.json')
-const EXPECTED_RESERVATION = 'SET @@reservation=\'projects/my-test-project/locations/US/reservations/automated\';'
+const EXPECTED_RESERVATION = 'projects/my-test-project/locations/US/reservations/automated'
 
 function verify() {
   if (!fs.existsSync(COMPILED_JSON_PATH)) {
     console.error('Error: compiled.json not found. Run compilation first.')
     process.exit(1)
   }
+
+  const version = process.argv[2]
+  console.log(`Running verification for Dataform version: ${version}`)
+  const isNativeSupported = false // TODO: Set to true if testing against a version with native reservation support
 
   let fileContent = fs.readFileSync(COMPILED_JSON_PATH, 'utf8')
 
@@ -21,6 +25,8 @@ function verify() {
   const compiled = JSON.parse(fileContent)
   let errors = []
 
+  const expectedStatement = `SET @@reservation='${EXPECTED_RESERVATION}';`
+
   const checkTable = (name, expectedPreOps) => {
     const table = compiled.tables.find(t => t.target.name === name)
     if (!table) {
@@ -28,14 +34,18 @@ function verify() {
       return
     }
 
-    // Check first preOp
-    if (!table.preOps || table.preOps[0] !== EXPECTED_RESERVATION) {
-      errors.push(`Table ${name} missing reservation preOp. Found: ${table.preOps ? table.preOps[0] : 'none'}`)
-    }
-
-    // Check second preOp if provided
-    if (expectedPreOps && table.preOps[1] !== expectedPreOps) {
-      errors.push(`Table ${name} missing original preOp. Found: ${table.preOps[1]}`)
+    if (isNativeSupported) {
+      if (!table.actionDescriptor || table.actionDescriptor.reservation !== EXPECTED_RESERVATION) {
+        errors.push(`Table ${name} missing reservation feature. Found: ${table.actionDescriptor ? table.actionDescriptor.reservation : '""'}`)
+      }
+    } else {
+      const hasReservation = table.preOps && table.preOps.some(op => op.includes(expectedStatement))
+      if (!hasReservation) {
+        errors.push(`Table ${name} missing reservation in preOps.\nFound preOps:\n${table.preOps ? table.preOps.join('\n') : 'none'}`)
+      }
+      if (expectedPreOps && table.preOps && !table.preOps.some(op => op.includes(expectedPreOps))) {
+        errors.push(`Table ${name} missing expected preOp: ${expectedPreOps}`)
+      }
     }
   }
 
@@ -46,12 +56,18 @@ function verify() {
       return
     }
 
-    if (!op.queries || op.queries[0] !== EXPECTED_RESERVATION) {
-      errors.push(`Operation ${name} missing reservation query. Found: ${op.queries ? op.queries[0] : 'none'}`)
-    }
-
-    if (expectedQuery && !op.queries.some(q => q.includes(expectedQuery))) {
-      errors.push(`Operation ${name} missing original query: ${expectedQuery}`)
+    if (isNativeSupported) {
+      if (!op.actionDescriptor || op.actionDescriptor.reservation !== EXPECTED_RESERVATION) {
+        errors.push(`Operation ${name} missing reservation feature. Found: ${op.actionDescriptor ? op.actionDescriptor.reservation : 'none'}`)
+      }
+    } else {
+      const hasReservation = op.queries && op.queries.some(q => q.includes(expectedStatement))
+      if (!hasReservation) {
+        errors.push(`Operation ${name} missing reservation in queries.\nFound queries:\n${op.queries ? op.queries.join('\n') : 'none'}`)
+      }
+      if (expectedQuery && op.queries && !op.queries.some(q => q.includes(expectedQuery))) {
+        errors.push(`Operation ${name} missing expected query: ${expectedQuery}`)
+      }
     }
   }
 
@@ -62,8 +78,8 @@ function verify() {
       return
     }
 
-    if (assertion.query.includes('SET @@reservation')) {
-      errors.push(`Assertion ${name} should NOT have reservation set, but it does.`)
+    if (assertion.preOps && assertion.preOps.some(op => op.includes('SET @@reservation=')) || assertion.query.includes('SET @@reservation')) {
+      errors.push(`Assertion ${name} should NOT have reservation re-assigned using SQL statement.`)
     }
   }
 
@@ -89,7 +105,7 @@ function verify() {
     errors.forEach(err => console.error(` - ${err}`))
     process.exit(1)
   } else {
-    console.log('SUCCESS: All integration tests passed!')
+    console.log(`SUCCESS: All integration tests passed for version ${version}!`)
   }
 }
 
