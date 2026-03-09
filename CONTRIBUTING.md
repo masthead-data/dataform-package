@@ -48,15 +48,6 @@ We welcome contributions to the Dataform package! This document provides guideli
    npm run lint
    ```
 
-### Local Integration Testing
-The `test-project` is configured to use the local version of the package. In `test-project/package.json`:
-```json
-"dependencies": {
-  "@masthead-data/dataform-package": "file:../"
-}
-```
-**Note:** `npm ci` or `npm install` in the `test-project` caches the local package. If you make changes to `index.js` and don't see them reflected, you may need to force an update or avoid `npm ci` during rapid iteration.
-
 ## Project Structure
 
 ```filetree
