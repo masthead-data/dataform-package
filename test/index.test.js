@@ -871,4 +871,110 @@ describe('Dataform package', () => {
       expect(findReservation({}, actionToReservation)).toBeNull()
     })
   })
+
+  describe('prependStatement', () => {
+    test('should prepend statement to array', () => {
+      const { prependStatement } = require('../index')
+      const result = prependStatement(['query2'], 'query1')
+      expect(result).toEqual(['query1', 'query2'])
+    })
+
+    test('should not duplicate statement in array', () => {
+      const { prependStatement } = require('../index')
+      const result = prependStatement(['query1', 'query2'], 'query1')
+      expect(result).toEqual(['query1', 'query2'])
+    })
+
+    test('should prepend statement to string', () => {
+      const { prependStatement } = require('../index')
+      const result = prependStatement('SELECT * FROM table', 'SET @var=1;')
+      expect(result).toEqual(['SET @var=1;', 'SELECT * FROM table'])
+    })
+
+    test('should not duplicate statement in string', () => {
+      const { prependStatement } = require('../index')
+      const duplicate = 'SET @var=1;\nSELECT * FROM table'
+      const result = prependStatement(duplicate, 'SET @var=1;')
+      expect(result).toBe(duplicate)
+    })
+
+    test('should handle empty array', () => {
+      const { prependStatement } = require('../index')
+      const result = prependStatement([], 'statement')
+      expect(result).toEqual(['statement'])
+    })
+
+    test('should handle empty string', () => {
+      const { prependStatement } = require('../index')
+      const result = prependStatement('', 'statement')
+      expect(result).toEqual(['statement', ''])
+    })
+  })
+
+  describe('isArrayOrString', () => {
+    test('should return true for array', () => {
+      const { isArrayOrString } = require('../index')
+      expect(isArrayOrString([])).toBe(true)
+      expect(isArrayOrString(['item'])).toBe(true)
+    })
+
+    test('should return true for string', () => {
+      const { isArrayOrString } = require('../index')
+      expect(isArrayOrString('')).toBe(true)
+      expect(isArrayOrString('test')).toBe(true)
+    })
+
+    test('should return false for other types', () => {
+      const { isArrayOrString } = require('../index')
+      expect(isArrayOrString(null)).toBe(false)
+      expect(isArrayOrString(undefined)).toBe(false)
+      expect(isArrayOrString(123)).toBe(false)
+      expect(isArrayOrString({})).toBe(false)
+      expect(isArrayOrString(() => {})).toBe(false)
+    })
+  })
+
+  describe('findReservation', () => {
+    test('should find reservation for matching action', () => {
+      const { findReservation } = require('../index')
+      const actionToReservation = new Map([
+        ['prod.dataset.table', 'projects/test/reservations/prod']
+      ])
+      const result = findReservation('prod.dataset.table', actionToReservation)
+      expect(result).toBe('projects/test/reservations/prod')
+    })
+
+    test('should return null for non-matching action', () => {
+      const { findReservation } = require('../index')
+      const actionToReservation = new Map([
+        ['prod.dataset.table', 'projects/test/reservations/prod']
+      ])
+      const result = findReservation('unknown.dataset.table', actionToReservation)
+      expect(result).toBeNull()
+    })
+
+    test('should handle multiple config sets', () => {
+      const { findReservation } = require('../index')
+      const actionToReservation = new Map([
+        ['prod.dataset.table', 'prod-res'],
+        ['dev.dataset.table', 'dev-res']
+      ])
+      expect(findReservation('prod.dataset.table', actionToReservation)).toBe('prod-res')
+      expect(findReservation('dev.dataset.table', actionToReservation)).toBe('dev-res')
+    })
+
+    test('should return null for null/undefined action name', () => {
+      const { findReservation } = require('../index')
+      const actionToReservation = new Map([['test', 'res']])
+      expect(findReservation(null, actionToReservation)).toBeNull()
+      expect(findReservation(undefined, actionToReservation)).toBeNull()
+    })
+
+    test('should return null for non-string action name', () => {
+      const { findReservation } = require('../index')
+      const actionToReservation = new Map([['test', 'res']])
+      expect(findReservation(123, actionToReservation)).toBeNull()
+      expect(findReservation({}, actionToReservation)).toBeNull()
+    })
+  })
 })
