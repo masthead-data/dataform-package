@@ -115,13 +115,9 @@ function createReservationSetter(config) {
     }
 
     const actionName = getActionName(ctx)
-    if (!actionName) return ''
-
     const reservation = findReservation(actionName, actionToReservation)
 
-    return reservation
-      ? `SET @@reservation='${reservation}';`
-      : ''
+    return reservation ? `SET @@reservation='${reservation}';` : ''
   }
 }
 
