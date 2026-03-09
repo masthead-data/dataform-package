@@ -12,7 +12,7 @@ function verify() {
 
   const version = process.argv[2]
   console.log(`Running verification for Dataform version: ${version}`)
-  const isNativeSupported = false; // TODO: Set to true if testing against a version with native reservation support
+  const isNativeSupported = false // TODO: Set to true if testing against a version with native reservation support
 
   let fileContent = fs.readFileSync(COMPILED_JSON_PATH, 'utf8')
 
