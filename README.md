@@ -246,6 +246,7 @@ Actions are matched against the `RESERVATION_CONFIG` using exact string matching
 Based on the matched reservation, the package automatically prepends the `SET @@reservation` SQL statement to your queries or pre-operations.
 
 The specific reservation value applied follows this logic:
+
 * **Specific Reservation**: `projects/{project}/locations/{location}/reservations/{name}`
 * **On-demand**: `none`
 * **Default/Null**: No reservation override applied

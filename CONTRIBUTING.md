@@ -4,49 +4,69 @@ We welcome contributions to the Dataform package! This document provides guideli
 
 ## Development Setup
 
-1. **Clone the repository:**
+### 1. **Clone the repository:**
 
    ```bash
    git clone https://github.com/masthead-data/dataform-package.git
    cd dataform-package
    ```
 
-2. **Install dependencies:**
+### 2. **Install dependencies:**
 
    ```bash
    npm install
    ```
 
-3. **Run tests:**
+### 3. **Run tests:**
 
-   #### Matrix Testing (Default)
+#### 3.1 Matrix Testing (Default)
+
    Run from the root to test all supported versions:
+
    ```bash
    npm test
    ```
+
    This command iterates through all supported Dataform versions (currently v2.4.2 and v3.X.X), managing configuration file conflicts automatically.
 
-   #### Single Version (Fast Iteration)
+#### 3.2 Single Version (Fast Iteration)
+
    For rapid development on the version currently installed in `test-project`:
+
    ```bash
    npm run test:single
    ```
+
    This runs:
    1. `jest`: Unit tests for helper functions.
    2. `dataform compile`: Generates the actual project graph.
    3. `verify_compilation.js`: In-depth JSON inspection.
 
-   #### Specific Version
+#### 3.3 Specific Version
+
    Test a single Dataform version:
+
    ```bash
    npm test -- 2.4.2
    ```
 
-4. **Run linting:**
+### 4. **Run linting:**
 
    ```bash
    npm run lint
    ```
+
+### Local Integration Testing
+
+The `test-project` is configured to use the local version of the package. In `test-project/package.json`:
+
+```json
+"dependencies": {
+  "@masthead-data/dataform-package": "file:../"
+}
+```
+
+**Note:** `npm ci` or `npm install` in the `test-project` caches the local package. If you make changes to `index.js` and don't see them reflected, you may need to force an update or avoid `npm ci` during rapid iteration.
 
 ## Project Structure
 
@@ -57,8 +77,7 @@ dataform-package/
 │   └── index.test.js     # Test suite
 ├── package.json          # Package configuration
 ├── README.md             # Main documentation
-├── CHANGELOG.md          # Version history
-└── .eslintrc.js          # ESLint configuration
+└── CHANGELOG.md          # Version history
 ```
 
 ## Making Changes
@@ -71,6 +90,7 @@ This project uses `npm ci` in CI/CD pipelines, which requires `package-lock.json
 The project includes optional platform-specific dependencies (e.g., `@unrs/resolver-binding-*`). If you update dependencies on macOS, `npm` might "clean" other platform bindings from the lockfile, causing CI to fail on Linux.
 
 If CI fails with `npm error EUSAGE` related to missing platform bindings:
+
 1. Restore the `package-lock.json` to a known good state.
 2. Run `npm install` to update the version/dependencies without removing optional bindings.
 3. Verify that the lockfile still contains entries for `@unrs/resolver-binding-linux-*` before committing.
