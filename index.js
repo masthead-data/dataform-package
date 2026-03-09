@@ -107,7 +107,7 @@ function preprocessConfig(config) {
  * // ${reservationSetter(ctx)}
  */
 function createReservationSetter(config) {
-  const configSets = preprocessConfig(config)
+  const { actionToReservation } = preprocessConfig(config)
 
   return function reservationSetter(ctx) {
     if (isNativeReservationSupported()) {
@@ -117,7 +117,7 @@ function createReservationSetter(config) {
     const actionName = getActionName(ctx)
     if (!actionName) return ''
 
-    const reservation = findReservation(actionName, configSets)
+    const reservation = findReservation(actionName, actionToReservation)
 
     return reservation
       ? `SET @@reservation='${reservation}';`
@@ -260,64 +260,65 @@ function applyReservationToAction(action, actionToReservation) {
       // Old Approach (SQL Prepending)
       const statement = `SET @@reservation='${reservation}';`
 
-    // For operation builders, the queries are often set AFTER the builder is created via .queries()
-    // We monkeypatch the .queries() method to ensure our statement is always prepended.
-    if (isOperation && typeof action.queries === 'function' && !action._queriesPatched) {
-      const originalQueriesFn = action.queries
-      action.queries = function (queries) {
-        // Check for outer DECLARE before wrapping
-        if (hasOuterDeclare(queries)) {
-          return originalQueriesFn.apply(this, [queries])
-        }
+      // For operation builders, the queries are often set AFTER the builder is created via .queries()
+      // We monkeypatch the .queries() method to ensure our statement is always prepended.
+      if (isOperation && typeof action.queries === 'function' && !action._queriesPatched) {
+        const originalQueriesFn = action.queries
+        action.queries = function (queries) {
+          // Check for outer DECLARE before wrapping
+          if (hasOuterDeclare(queries)) {
+            return originalQueriesFn.apply(this, [queries])
+          }
 
-        const queriesArray = typeof queries === 'function'
-          ? (ctx) => prependStatement(queries(ctx), statement)
-          : prependStatement(queries, statement)
-        return originalQueriesFn.apply(this, [queriesArray])
+          const queriesArray = typeof queries === 'function'
+            ? (ctx) => prependStatement(queries(ctx), statement)
+            : prependStatement(queries, statement)
+          return originalQueriesFn.apply(this, [queriesArray])
+        }
+        action._queriesPatched = true
       }
-      action._queriesPatched = true
-    }
 
       // Prefer modifying data structure directly if we know it's a safe type
       // This handles both Builders (via .proto) and Compiled Objects (direct)
 
-    // 1. Try contextablePreOps (Tables/Views Builders before resolution)
-    if (action.contextablePreOps) {
-      if (!hasOuterDeclare(action.contextablePreOps)) {
-        action.contextablePreOps = prependStatement(action.contextablePreOps, statement)
+      // 1. Try contextablePreOps (Tables/Views Builders before resolution)
+      if (action.contextablePreOps) {
+        if (!hasOuterDeclare(action.contextablePreOps)) {
+          action.contextablePreOps = prependStatement(action.contextablePreOps, statement)
+        }
       }
-    }
-    // 2. Try contextableQueries (Operations Builders before resolution)
-    else if (action.contextableQueries) {
+      // 2. Try contextableQueries (Operations Builders before resolution)
+      else if (action.contextableQueries) {
         // Skip if there is an outer DECLARE
         if (!hasOuterDeclare(action.contextableQueries)) {
           action.contextableQueries = prependStatement(action.contextableQueries, statement)
         }
-    }
-    // 3. Try proto.preOps (Compiled Tables/Views or Resolved Builders)
-    else if (hasType) {
-      if (!hasOuterDeclare(proto.preOps || [])) {
-        if (!proto.preOps) {
-          proto.preOps = []
-        }
+      }
+      // 3. Try proto.preOps (Compiled Tables/Views or Resolved Builders)
+      else if (hasType) {
+        if (!hasOuterDeclare(proto.preOps || [])) {
+          if (!proto.preOps) {
+            proto.preOps = []
+          }
 
-        if (isArrayOrString(proto.preOps)) {
-          proto.preOps = prependStatement(proto.preOps, statement)
-        } else if (hasPreOpsFn) {
-          action.preOps(statement)
+          if (isArrayOrString(proto.preOps)) {
+            proto.preOps = prependStatement(proto.preOps, statement)
+          } else if (hasPreOpsFn) {
+            action.preOps(statement)
+          }
         }
       }
-    }
-    // 4. Try proto.queries (Compiled Operations or Resolved Builders)
-    else if (proto.queries) {
-      // Skip if there is an outer DECLARE
-      if (!hasOuterDeclare(proto.queries)) {
-        proto.queries = prependStatement(proto.queries, statement)
+      // 4. Try proto.queries (Compiled Operations or Resolved Builders)
+      else if (proto.queries) {
+        // Skip if there is an outer DECLARE
+        if (!hasOuterDeclare(proto.queries)) {
+          proto.queries = prependStatement(proto.queries, statement)
+        }
       }
-    }
-    // 5. Fallback to function API (likely Tables/Views)
-    else if (hasPreOpsFn) {
-      action.preOps(statement)
+      // 5. Fallback to function API (likely Tables/Views)
+      else if (hasPreOpsFn) {
+        action.preOps(statement)
+      }
     }
   }
 }
