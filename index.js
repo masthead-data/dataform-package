@@ -213,35 +213,6 @@ function prependStatement(target, statement) {
 function isArrayOrString(val) {
   return Array.isArray(val) || typeof val === 'string'
 }
-/**
- * Ensures a statement is prepended to an array or string
- * @param {Array|string} target - The target to prepend to
- * @param {string} statement - The statement to prepend
- * @returns {Array|string} The modified target
- */
-function prependStatement(target, statement) {
-  if (Array.isArray(target)) {
-    if (!target.includes(statement)) {
-      return [statement, ...target]
-    }
-    return target
-  }
-  if (typeof target === 'string') {
-    if (!target.includes(statement)) {
-      return [statement, target]
-    }
-  }
-  return target
-}
-
-/**
- * Checks if a value is an array or string
- * @param {any} val - The value to check
- * @returns {boolean} True if array or string
- */
-function isArrayOrString(val) {
-  return Array.isArray(val) || typeof val === 'string'
-}
 
 /**
  * Helper to apply reservation to a single action
