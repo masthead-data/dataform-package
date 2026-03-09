@@ -12,7 +12,6 @@ function verify() {
 
   const version = process.argv[2]
   console.log(`Running verification for Dataform version: ${version}`)
-  const isNativeSupported = false // TODO: Set to true if testing against a version with native reservation support
 
   let fileContent = fs.readFileSync(COMPILED_JSON_PATH, 'utf8')
 
@@ -23,6 +22,14 @@ function verify() {
   }
 
   const compiled = JSON.parse(fileContent)
+
+  // Native reservation support (actionDescriptor.reservation) is pending a Dataform upstream PR.
+  // Once merged, replace the hardcoded false with:
+  //   const isNativeSupported = parseVersion(compiled.dataformCoreVersion || '0') >= 3
+  const coreVersion = compiled.dataformCoreVersion || '0'
+  const isNativeSupported = false // TODO: enable once Dataform native reservation PR is merged
+  console.log(`Dataform core version: ${coreVersion} — native reservation support: ${isNativeSupported}`)
+
   let errors = []
 
   const expectedStatement = `SET @@reservation='${EXPECTED_RESERVATION}';`
@@ -83,13 +90,30 @@ function verify() {
     }
   }
 
+  // Verify that a table NOT in any config has no reservation injected
+  const checkNoReservation = (name) => {
+    const table = compiled.tables.find(t => t.target.name === name)
+    if (!table) {
+      errors.push(`Table ${name} not found`)
+      return
+    }
+
+    const hasInjectedSql = table.preOps && table.preOps.some(op => op.includes('SET @@reservation='))
+    if (hasInjectedSql) {
+      errors.push(`Table ${name} should NOT have a reservation injected, but found one in preOps`)
+    }
+
+    if (isNativeSupported && table.actionDescriptor && table.actionDescriptor.reservation) {
+      errors.push(`Table ${name} should NOT have a native reservation, but found: ${table.actionDescriptor.reservation}`)
+    }
+  }
+
   console.log('--- Verifying Dataform Package Integration ---')
 
   // Verify automated tests (Pre-initialization case)
   console.log('Checking Pre-initialization actions...')
   checkTable('test_table')
   checkTable('test_view')
-  checkTable('test_incremental', 'DECLARE test_var INT64 DEFAULT 1;')
   checkOperation('test_operation', 'CREATE OR REPLACE TEMP TABLE temp_val AS SELECT 1 as val;')
   checkOperation('test_single_op', 'SELECT 1 as single_val')
   checkAssertion('test_assertion_skipped')
@@ -99,6 +123,15 @@ function verify() {
   checkTable('test_table_post')
   checkOperation('test_operation_post', 'SELECT 2 as op_val')
   checkAssertion('test_assertion_post_skipped')
+
+  // Verify that un-configured tables are not modified
+  console.log('Checking no-reservation actions...')
+  checkNoReservation('no_reservation_table')
+
+  // Verify DECLARE-skip: a table whose preOps starts with DECLARE must NOT get the reservation
+  // injected (BigQuery requires DECLARE to be the first statement in a script).
+  console.log('Checking DECLARE-skip behavior...')
+  checkNoReservation('test_incremental')
 
   if (errors.length > 0) {
     console.error('FAIL: Verification errors found:')

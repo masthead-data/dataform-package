@@ -59,3 +59,5 @@ See [CONTRIBUTING.md](../CONTRIBUTING.md#release-process) for the full release w
 ## Known Limitations & Future Work
 
 **Performance:** `findReservation` uses linear scan (acceptable for typical project sizes <1000 actions)
+
+**Native Reservation Support (pending):** Dataform has an open upstream PR to support `actionDescriptor.reservation` as a first-class field. Once merged, the package's native code path (`isNativeReservationSupported()` → sets `proto.actionDescriptor.reservation`) will be activated by setting `DATAFORM_MOCK_NATIVE_RESERVATION=true` (or checking the compiled `dataformCoreVersion >= 3`). Currently, `isNativeReservationSupported()` always returns `false` and `verify_compilation.js` also hardcodes `isNativeSupported = false`. When the upstream PR lands, both should be updated to auto-detect from the Dataform core version.

@@ -1,1 +1,3 @@
 node_modules/
+test-project/compiled.json
+test-project/snowflake.log
