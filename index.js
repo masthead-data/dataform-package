@@ -59,6 +59,12 @@ function preprocessConfig(config) {
       throw new Error(`Configuration item at index ${index} is missing 'reservation' property`)
     }
 
+    if (item.reservation !== null && item.reservation !== undefined) {
+      if (typeof item.reservation !== 'string' || !/^[a-zA-Z0-9\-_/]+$/.test(item.reservation)) {
+        throw new Error(`Configuration item at index ${index} has an invalid 'reservation' value. Only alphanumeric characters, hyphens, underscores, and slashes are allowed.`)
+      }
+    }
+
     if (!Array.isArray(item.actions)) {
       throw new Error(`Configuration item at index ${index} must have 'actions' as an array`)
     }
