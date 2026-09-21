@@ -6,6 +6,6 @@
     "@masthead-data/dataform-package": "file:../"
   },
   "devDependencies": {
-    "@dataform/cli": "3.0.69"
+    "@dataform/cli": "3.0.70"
   }
 }
