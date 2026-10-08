@@ -7,8 +7,5 @@
   },
   "devDependencies": {
     "@dataform/cli": "3.0.71"
-  },
-  "overrides": {
-    "vm2": "^3.11.7"
   }
 }
