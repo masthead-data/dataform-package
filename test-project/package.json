@@ -7,5 +7,9 @@
   },
   "devDependencies": {
     "@dataform/cli": "3.1.2"
+  },
+  "overrides": {
+    "glob@^10": "^13.0.6",
+    "minimatch@>=7 <11.0.1": "^11.0.5"
   }
 }
