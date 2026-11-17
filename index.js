@@ -35,6 +35,8 @@ function findReservation(actionName, actionToReservation) {
   return actionToReservation.get(actionName) ?? null
 }
 
+const RESERVATION_PATTERN = /^[A-Za-z0-9\-_.:/]*$/
+
 /**
  * Validates and preprocesses the configuration array
  * @param {Array} config - Raw configuration array
@@ -57,6 +59,14 @@ function preprocessConfig(config) {
 
     if (!('reservation' in item)) {
       throw new Error(`Configuration item at index ${index} is missing 'reservation' property`)
+    }
+
+    // The reservation is interpolated into `SET @@reservation='...'`, so reject quotes,
+    // semicolons and whitespace. Dots and colons are allowed for domain-scoped project IDs
+    // (e.g. projects/example.com:my-project/locations/US/reservations/prod).
+    if (item.reservation !== null && item.reservation !== undefined &&
+      (typeof item.reservation !== 'string' || !RESERVATION_PATTERN.test(item.reservation))) {
+      throw new Error(`Configuration item at index ${index} has an invalid 'reservation' value. Only letters, digits, '-', '_', '.', ':' and '/' are allowed.`)
     }
 
     if (!Array.isArray(item.actions)) {
