@@ -133,6 +133,18 @@ describe('Dataform package', () => {
       expect(() => createReservationSetter([{ reservation: 'test', actions: 'not-array' }])).toThrow('Configuration item at index 0 must have \'actions\' as an array')
     })
 
+    test('should validate reservation format', () => {
+      const invalid = 'Configuration item at index 0 has an invalid \'reservation\' value'
+      expect(() => createReservationSetter([{ reservation: 'x\'; DROP TABLE users; --', actions: [] }])).toThrow(invalid)
+      expect(() => createReservationSetter([{ reservation: 'res name', actions: [] }])).toThrow(invalid)
+      expect(() => createReservationSetter([{ reservation: 42, actions: [] }])).toThrow(invalid)
+      expect(() => createReservationSetter([{ reservation: 'none', actions: [] }])).not.toThrow()
+      expect(() => createReservationSetter([{ reservation: 'projects/test/locations/US/reservations/prod', actions: [] }])).not.toThrow()
+      expect(() => createReservationSetter([{ reservation: 'projects/example.com:proj/locations/us-central1/reservations/prod_1', actions: [] }])).not.toThrow()
+      expect(() => createReservationSetter([{ reservation: null, actions: [] }])).not.toThrow()
+      expect(() => createReservationSetter([{ reservation: undefined, actions: [] }])).not.toThrow()
+    })
+
     test('should return empty string for null context', () => {
       const result = reservation_setter(null)
       expect(result).toBe('')
