@@ -36,6 +36,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Reservation placed before a chained `DECLARE` in table/view/incremental actions** - When `preOps('DECLARE ...')` was chained after `publish()`, the reservation was injected at creation time and compiled before the `DECLARE`, which BigQuery rejects. The builder's `.preOps()` and `.query()` are now intercepted, so the reservation is prepended only when there is no outer `DECLARE`, and added on `.query()` when the action has no preOps.
 
+### Security
+
+- **Reservation value validation** - `reservation` values are now validated before they are interpolated into `SET @@reservation='...'`. Only letters, digits, `-`, `_`, `.`, `:` and `/` are allowed, so quotes, semicolons and whitespace can no longer inject SQL. A configuration with an invalid value now throws when the reservation setter is created, instead of compiling malformed SQL.
+
 ## [0.2.0] - 2026-01-20
 
 ### Added
