@@ -22,7 +22,7 @@ Add the dependency to your `package.json`:
 ```json
 {
   "dependencies": {
-    "@masthead-data/dataform-package": "0.2.0"
+    "@masthead-data/dataform-package": "0.2.1"
   }
 }
 ```
