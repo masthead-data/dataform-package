@@ -21,14 +21,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
-## [0.2.1] - 2026-03-20
+## [0.2.1] - 2026-11-17
+
+### Added
+
+- **Outer `DECLARE` detection** - Actions whose SQL starts with an outer-level `DECLARE` statement are no longer given a `SET @@reservation` statement, because BigQuery requires `DECLARE` to be the first statement in a script. README documents this limitation.
 
 ### Changed
 
-- **SQL statement prepending logic refactored**
-- **Reservation lookup performance improved** - Refactored to use a Set for O(1) lookups instead of array iteration, significantly improving performance for large reservation lists
-- **Updated test version for v3.0 from 3.0.43 to 3.0.48** - Updated the Dataform version used in matrix testing to ensure compatibility with the latest stable release.
+- **SQL statement prepending logic refactored** - Duplicated injection logic in `applyReservationToAction` consolidated.
+- **Reservation lookup performance improved** - Reservation lookups are now constant-time instead of iterating over the reservation list, which helps with large configurations.
 
+### Fixed
+
+- **Reservation placed before a chained `DECLARE` in table/view/incremental actions** - When `preOps('DECLARE ...')` was chained after `publish()`, the reservation was injected at creation time and compiled before the `DECLARE`, which BigQuery rejects. The builder's `.preOps()` and `.query()` are now intercepted, so the reservation is prepended only when there is no outer `DECLARE`, and added on `.query()` when the action has no preOps.
 
 ## [0.2.0] - 2026-01-20
 
