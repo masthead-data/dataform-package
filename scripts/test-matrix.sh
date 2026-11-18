@@ -5,7 +5,7 @@ set -e
 if [ $# -gt 0 ]; then
   VERSIONS=("$@")
 else
-  VERSIONS=("2.4.2" "3.0.48")
+  VERSIONS=("2.4.2" "3.0.48" "latest")
 fi
 
 # Cleanup function to restore configuration files
@@ -26,10 +26,23 @@ trap cleanup EXIT INT TERM
 # Run jest first to ensure the package is working
 npx jest
 
+# Install the package from a packed tarball rather than the file:../ symlink.
+# Dataform 3.1+ refuses to require modules that resolve outside the project
+# directory, and the tarball also matches what users get from npm.
+PACK_DIR=$(mktemp -d)
+PACKAGE_TGZ="$PACK_DIR/$(npm pack --silent --pack-destination "$PACK_DIR")"
+trap 'cleanup; rm -rf "$PACK_DIR"' EXIT INT TERM
+
 echo "Running matrix tests across Dataform versions..."
 cd test-project
 
 for VERSION in "${VERSIONS[@]}"; do
+  # Resolve "latest" to a concrete version so the v2/v3 config handling below works
+  if [[ $VERSION == "latest" ]]; then
+    VERSION=$(npm view @dataform/core version)
+    echo "Resolved latest Dataform version to $VERSION"
+  fi
+
   echo ""
   echo "========================================="
   echo "Testing with Dataform $VERSION"
@@ -54,7 +67,7 @@ for VERSION in "${VERSIONS[@]}"; do
 
   echo "Installing Dataform @$VERSION..."
   # Use --no-save to avoid cluttering package.json/package-lock.json during matrix tests
-  npm install @dataform/cli@$VERSION @dataform/core@$VERSION --no-save
+  npm install @dataform/cli@$VERSION @dataform/core@$VERSION "$PACKAGE_TGZ" --no-save
 
   # Run tests using the single version command equivalent but passing the version
   npx @dataform/cli compile --json --vars=DATAFORM_VERSION=$VERSION > compiled.json
