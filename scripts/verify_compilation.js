@@ -34,6 +34,21 @@ function verify() {
 
   const expectedStatement = `SET @@reservation='${EXPECTED_RESERVATION}';`
 
+  // BigQuery applies @@reservation only if it is set before any other statement in the
+  // script, so the statement must come first and be injected exactly once.
+  const checkStatementFirst = (label, statements) => {
+    const list = statements || []
+    const found = `\nFound:\n${list.length ? list.join('\n') : 'none'}`
+    if (list.length === 0 || !list[0].trim().startsWith(expectedStatement)) {
+      errors.push(`${label} must start with the reservation statement.${found}`)
+      return
+    }
+    const count = list.join('\n').split('SET @@reservation=').length - 1
+    if (count !== 1) {
+      errors.push(`${label} should set the reservation exactly once, but sets it ${count} times.${found}`)
+    }
+  }
+
   const checkTable = (name, expectedPreOps) => {
     const table = compiled.tables.find(t => t.target.name === name)
     if (!table) {
@@ -46,10 +61,7 @@ function verify() {
         errors.push(`Table ${name} missing reservation feature. Found: ${table.actionDescriptor ? table.actionDescriptor.reservation : '""'}`)
       }
     } else {
-      const hasReservation = table.preOps && table.preOps.some(op => op.includes(expectedStatement))
-      if (!hasReservation) {
-        errors.push(`Table ${name} missing reservation in preOps.\nFound preOps:\n${table.preOps ? table.preOps.join('\n') : 'none'}`)
-      }
+      checkStatementFirst(`Table ${name} preOps`, table.preOps)
       if (expectedPreOps && table.preOps && !table.preOps.some(op => op.includes(expectedPreOps))) {
         errors.push(`Table ${name} missing expected preOp: ${expectedPreOps}`)
       }
@@ -68,10 +80,7 @@ function verify() {
         errors.push(`Operation ${name} missing reservation feature. Found: ${op.actionDescriptor ? op.actionDescriptor.reservation : 'none'}`)
       }
     } else {
-      const hasReservation = op.queries && op.queries.some(q => q.includes(expectedStatement))
-      if (!hasReservation) {
-        errors.push(`Operation ${name} missing reservation in queries.\nFound queries:\n${op.queries ? op.queries.join('\n') : 'none'}`)
-      }
+      checkStatementFirst(`Operation ${name} queries`, op.queries)
       if (expectedQuery && op.queries && !op.queries.some(q => q.includes(expectedQuery))) {
         errors.push(`Operation ${name} missing expected query: ${expectedQuery}`)
       }

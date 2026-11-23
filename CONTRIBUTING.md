@@ -27,7 +27,7 @@ We welcome contributions to the Dataform package! This document provides guideli
    npm test
    ```
 
-   This command iterates through all supported Dataform versions (currently v2.4.2 and v3.X.X), managing configuration file conflicts automatically.
+   This command iterates through all supported Dataform versions (currently v2.4.2, v3.0.48 and the latest release), managing configuration file conflicts automatically.
 
 #### 3.2 Single Version (Fast Iteration)
 
